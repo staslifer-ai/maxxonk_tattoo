@@ -4,7 +4,6 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // --- Application State & Data ---
 const appData = {
-    // Эта структура остается без изменений, она используется для динамических данных
     contact: {},
     bodySpaces: [],
     tattooIdea: {
@@ -16,11 +15,9 @@ const appData = {
 
 // --- DOM Elements ---
 const DOMElements = {
-    tattooForm: document.getElementById('tattoo-form'), // ДОБАВЛЕНО: Ссылка на саму форму
+    tattooForm: document.getElementById('tattoo-form'),
     sections: document.querySelectorAll('.step-section'),
     navButtons: document.querySelectorAll('.btn[data-target]'),
-    // toCompletedBtn убран отсюда, так как его обработка теперь через submit формы
-    // Body Selector
     widthSlider: document.getElementById('width-slider'),
     widthValue: document.getElementById('width-value'),
     heightSlider: document.getElementById('height-slider'),
@@ -33,11 +30,9 @@ const DOMElements = {
     tabManual: document.getElementById('tab-manual'),
     modelWrapper: document.getElementById('model-wrapper'),
     manualForm: document.getElementById('manual-form'),
-    // File Upload
     fileInput: document.getElementById('file-input'),
     dropArea: document.getElementById('file-drop-area'),
     previewContainer: document.getElementById('image-preview-container'),
-    // Calendar
     calendarGrid: document.querySelector('#schedule-section .calendar__grid'),
 };
 
@@ -46,11 +41,10 @@ document.addEventListener('DOMContentLoaded', init);
 
 function init() {
     setupNavigation();
-    setupFormSubmission(); // ДОБАВЛЕНО: Новая функция для обработки отправки
+    setupFormSubmission();
     setupBodySelector();
     setupFileUpload();
     setupCalendar();
-    // Логика 3D сцены остаётся, она будет вызвана по клику как и раньше
 }
 
 // --- Navigation ---
@@ -61,7 +55,6 @@ function showScreen(targetId) {
     window.scrollTo(0, 0);
 }
 
-// ИЗМЕНЕНО: Эта функция теперь отвечает только за кнопки навигации "вперед/назад"
 function setupNavigation() {
     DOMElements.navButtons.forEach(button => {
         button.addEventListener('click', () => {
@@ -69,71 +62,54 @@ function setupNavigation() {
             showScreen(targetId);
         });
     });
-    // Старый обработчик для toCompletedBtn удален отсюда, так как теперь используется 'submit'
 }
 
-// ДОБАВЛЕНО: Вся новая логика для отправки формы
+// --- Form Submission ---
 function setupFormSubmission() {
     DOMElements.tattooForm.addEventListener('submit', async (event) => {
-        event.preventDefault(); // Обязательно, чтобы предотвратить перезагрузку страницы
+        event.preventDefault();
 
         const submitButton = document.getElementById('to-completed-btn');
         submitButton.disabled = true;
         submitButton.textContent = 'Отправка...';
 
-        // Создаем FormData из нашей HTML-формы.
-        // Это автоматически соберет все поля с атрибутом `name` (fullname, email, files и т.д.)
         const formData = new FormData(DOMElements.tattooForm);
         
-        // Теперь вручную добавляем данные, которых нет в полях формы,
-        // но которые хранятся в JS
-        
-        // 1. Добавляем дату из календаря
         const selectedDateEl = DOMElements.calendarGrid.querySelector('.is-selected');
         const monthYear = document.querySelector('#schedule-section .calendar__header h3').textContent;
         const appointmentDate = selectedDateEl ? `${selectedDateEl.textContent} ${monthYear}` : 'Не выбрана';
         formData.append('appointmentDate', appointmentDate);
 
-        // 2. Добавляем данные о выбранных частях тела
         const bodySpacesText = appData.bodySpaces.map(space => 
             `Часть тела: ${space.part}, Размер: ${space.size}${space.details ? ', Детали: ' + space.details : ''}`
-        ).join('; \n'); // Форматируем в удобную строку
+        ).join('; \n');
         formData.append('bodySpaces', bodySpacesText || 'Не указано');
         
-        // 3. Отправляем данные в Netlify Function
         try {
             const response = await fetch('/.netlify/functions/sendForm', {
                 method: 'POST',
-                body: formData, // Передаем объект FormData напрямую. Браузер сам установит нужный Content-Type
+                body: formData,
             });
 
             if (!response.ok) {
-                // Если сервер вернул ошибку, пытаемся ее прочитать и показать
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Не удалось отправить форму.');
             }
             
-            // Если все успешно — показываем экран "Спасибо"
             showScreen('completed-section');
 
         } catch (error) {
             console.error('Ошибка при отправке:', error);
             alert(`Произошла ошибка: ${error.message}`);
         } finally {
-            // В любом случае (успех или ошибка) возвращаем кнопку в исходное состояние
             submitButton.disabled = false;
             submitButton.textContent = 'Next';
         }
     });
 }
 
-// УДАЛЕНО: Старая функция collectAllData() больше не нужна,
-// так как ее логика теперь является частью setupFormSubmission.
-
 // --- Body Selector Logic ---
-// Вся ваша логика ниже остается без изменений.
 function setupBodySelector() {
-    // Sliders
     [DOMElements.widthSlider, DOMElements.heightSlider].forEach(slider => {
         if (slider) {
             const output = slider.id === 'width-slider' ? DOMElements.widthValue : DOMElements.heightValue;
@@ -143,7 +119,6 @@ function setupBodySelector() {
         }
     });
 
-    // Add Space Button
     DOMElements.addSpaceBtn.addEventListener('click', () => {
         const space = {
             id: Date.now(),
@@ -153,10 +128,9 @@ function setupBodySelector() {
         };
         appData.bodySpaces.push(space);
         renderBodySpaceCards();
-        DOMElements.bodyDetailsInput.value = ''; // Clear input
+        DOMElements.bodyDetailsInput.value = '';
     });
 
-    // Event delegation for removing cards
     DOMElements.cardsContainer.addEventListener('click', e => {
         if (e.target.classList.contains('card__close-btn')) {
             const cardId = Number(e.target.parentElement.dataset.id);
@@ -165,7 +139,6 @@ function setupBodySelector() {
         }
     });
 
-    // 3D/Manual Tabs
     let modelInitialized = false;
     DOMElements.tab3d.addEventListener('click', () => {
         toggleTabs(true);
@@ -198,20 +171,18 @@ function toggleTabs(show3d) {
 // --- File Upload Logic ---
 function setupFileUpload() {
     const { dropArea, fileInput, previewContainer } = DOMElements;
-
     if (!dropArea) return;
     
-    // Open file dialog on click
     dropArea.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', e => handleFiles(e.target.files));
 
-    // Drag & Drop events
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, e => {
             e.preventDefault();
             e.stopPropagation();
         }, false);
     });
+
     dropArea.addEventListener('dragenter', () => dropArea.classList.add('is-dragover'));
     dropArea.addEventListener('dragleave', () => dropArea.classList.remove('is-dragover'));
     dropArea.addEventListener('drop', e => {
@@ -219,7 +190,6 @@ function setupFileUpload() {
         handleFiles(e.dataTransfer.files);
     });
 
-    // Event delegation for remove buttons
     previewContainer.addEventListener('click', e => {
         if (e.target.classList.contains('preview-item__remove-btn')) {
             const fileId = e.target.parentElement.dataset.id;
@@ -234,7 +204,7 @@ function handleFiles(files) {
         if (!file.type.startsWith('image/') || DOMElements.previewContainer.children.length >= 5) return;
         
         const fileData = {
-            id: Date.now() + Math.random(), // Unique ID for the file
+            id: Date.now() + Math.random(),
             file: file
         };
         appData.tattooIdea.references.push(fileData);
@@ -269,18 +239,14 @@ function init3DScene() {
     let paintMode = false;
     let isPainting = false;
 
-    // --- Вспомогательные функции и переменные для рисования (ПЕРЕМЕЩЕНЫ ВВЕРХ) ---
     const mapRadius = v => THREE.MathUtils.mapLinear(+v, 5, 40, 0.03, 0.12);
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     const brushColor = new THREE.Color(0x7B2BFF);
     const tempVec = new THREE.Vector3();
     const prevColor = new THREE.Color();
-    // --- Конец перемещенного блока ---
-
+    
     const { clientWidth: W, clientHeight: H } = DOMElements.modelWrapper;
-
-    // Scene setup
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf0f0f0);
     camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 1000);
@@ -289,22 +255,46 @@ function init3DScene() {
     renderer.setSize(W, H);
     DOMElements.modelWrapper.appendChild(renderer.domElement);
 
-    // Controls
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.target.set(0, 1.5, 0);
     controls.update();
 
-    // Lighting
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
     const dl = new THREE.DirectionalLight(0xffffff, 0.8);
     dl.position.set(5, 5, 5);
     scene.add(dl);
 
-    // Create UI inside the model wrapper
-    create3DUI();
+    const uiElements = create3DUI(); 
+    DOMElements.modelWrapper.append(
+        uiElements.paintBtn, 
+        uiElements.readyBtn, 
+        uiElements.slider, 
+        uiElements.sliderLabel, 
+        uiElements.zoomControls, 
+        uiElements.hintIcons, 
+        uiElements.genderBtn
+    );
 
-    // Load Model
+    uiElements.paintBtn.onclick = () => {
+        paintMode = !paintMode;
+        controls.enabled = !paintMode;
+        uiElements.paintBtn.classList.toggle('active', paintMode);
+    };
+
+    uiElements.slider.oninput = () => { brushRadius = mapRadius(uiElements.slider.value); };
+    brushRadius = mapRadius(uiElements.slider.value);
+
+    const zoomFactor = 1.2;
+    uiElements.zoomInBtn.addEventListener('click', () => {
+        camera.zoom *= zoomFactor;
+        camera.updateProjectionMatrix();
+    });
+    uiElements.zoomOutBtn.addEventListener('click', () => {
+        camera.zoom /= zoomFactor;
+        camera.updateProjectionMatrix();
+    });
+    
     new GLTFLoader().load('man.glb', gltf => {
         const model = gltf.scene;
         model.traverse(obj => {
@@ -319,103 +309,10 @@ function init3DScene() {
                 obj.material.vertexColors = true;
             }
         });
-        model.position.y = -16; // Adjust based on model pivot
+        model.position.y = -16;
         scene.add(model);
     }, undefined, err => console.error('GLB loading error:', err));
     
-    
-    // --- 3D UI and Painting Logic ---
-    function create3DUI() {
-        // Paint Button
-        const paintBtn = document.createElement('button');
-        paintBtn.id = 'paint-btn';
-        paintBtn.className = 'model-ui-btn';
-        paintBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg><span>Paint</span>`;
-        paintBtn.onclick = () => {
-            paintMode = !paintMode;
-            controls.enabled = !paintMode;
-            paintBtn.classList.toggle('active', paintMode);
-        };
-        
-        // Ready Button
-        const readyBtn = document.createElement('button');
-        readyBtn.id = 'ready-btn';
-        readyBtn.className = 'model-ui-btn';
-        readyBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Ready</span>`;
-        // readyBtn.onclick = () => { /* Add logic for "Ready" */ };
-
-        // Brush Slider
-        const slider = document.createElement('input');
-        slider.type = 'range';
-        slider.className = 'brush-slider';
-        slider.min = 5; slider.max = 40; slider.value = 20;
-        slider.oninput = () => { brushRadius = mapRadius(slider.value); };
-        brushRadius = mapRadius(slider.value); // Initial value
-        
-        const sliderLabel = document.createElement('div');
-        sliderLabel.className = 'brush-label';
-        sliderLabel.innerHTML = 'Size<br>Brush';
-
-        const zoomControls = document.createElement('div');
-        zoomControls.className = 'zoom-controls'; // Класс для стилизации
-
-        // Кнопка "Приблизить" (+)
-        const zoomInBtn = document.createElement('button');
-        zoomInBtn.type = 'button'; // Важно, чтобы не отправлять форму!
-        zoomInBtn.id = 'zoom-in-btn';
-        zoomInBtn.className = 'zoom-btn';
-        zoomInBtn.textContent = '+';
-    
-        // Кнопка "Отдалить" (-)
-        const zoomOutBtn = document.createElement('button');
-        zoomOutBtn.type = 'button'; // Важно, чтобы не отправлять форму!
-        zoomOutBtn.id = 'zoom-out-btn';
-        zoomOutBtn.className = 'zoom-btn';
-        zoomOutBtn.textContent = '−'; // Используем правильный символ минуса
-
-        zoomControls.append(zoomOutBtn, zoomInBtn);
-
-        const hintIcons = document.createElement('div');
-            hintIcons.className = 'hint-icons';
-
-        // Создаем иконку "Вращение"
-        const rotateIcon = document.createElement('div');
-        rotateIcon.className = 'hint-icon';
-        rotateIcon.innerHTML = `
-        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16 5C11.5817 5 8 8.58172 8 13V21C8 25.4183 11.5817 29 16 29C20.4183 29 24 25.4183 24 21V13C24 8.58172 20.4183 5 16 5Z" stroke="#333" stroke-width="1.5"/>
-            <path d="M16 5V3" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M10 13H22" stroke="#333" stroke-width="1.5"/>
-            <path d="M15.5 8H16.5" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M22.3536 19.6464C22.5488 19.4512 22.5488 19.1346 22.3536 18.9393L19.1716 15.7574C18.9763 15.5621 18.6597 15.5621 18.4645 15.7574C18.2692 15.9526 18.2692 16.2692 18.4645 16.4645L21.2929 19.2929L18.4645 22.1213C18.2692 22.3166 18.2692 22.6332 18.4645 22.8284C18.6597 23.0237 18.9763 23.0237 19.1716 22.8284L22.3536 19.6464ZM10 19.5H21.6464V18.5H10V19.5Z" fill="#333"/>
-            <path d="M12.5 8H9C9 9.10457 9.89543 10 11 10H13C14.1046 10 15 9.10457 15 8H12.5Z" fill="#90EE90"/>
-        </svg>
-        <span>Rotate</span>
-        `;
-
-        // Создаем иконку "Зум"
-        const zoomIcon = document.createElement('div');
-        zoomIcon.className = 'hint-icon';
-        zoomIcon.innerHTML = `
-        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M16 5C11.5817 5 8 8.58172 8 13V21C8 25.4183 11.5817 29 16 29C20.4183 29 24 25.4183 24 21V13C24 8.58172 20.4183 5 16 5Z" stroke="#333" stroke-width="1.5"/>
-            <path d="M16 5V3" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M10 13H22" stroke="#333" stroke-width="1.5"/>
-            <rect x="15" y="8" width="2" height="5" rx="1" fill="#90EE90"/>
-        </svg>
-        <span>Zoom</span>
-        `;
-        hintIcons.append(rotateIcon, zoomIcon);
-
-        DOMElements.modelWrapper.append(paintBtn, readyBtn, slider, sliderLabel, zoomControls, hintIcons);
-    }
-    
-    function setMouse(e) {
-        const rect = renderer.domElement.getBoundingClientRect();
-        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    }
-
     function paint(e) {
         setMouse(e);
         raycaster.setFromCamera(mouse, camera);
@@ -431,7 +328,7 @@ function init3DScene() {
             const dist = tempVec.distanceTo(hit.point);
             if (dist > brushRadius) continue;
             
-            const weight = 1 - (dist / brushRadius) ** 2; // Smooth falloff
+            const weight = 1 - (dist / brushRadius) ** 2;
             prevColor.fromBufferAttribute(colorAttr, i);
             prevColor.lerp(brushColor, weight);
             colorAttr.setXYZ(i, prevColor.r, prevColor.g, prevColor.b);
@@ -439,6 +336,12 @@ function init3DScene() {
         colorAttr.needsUpdate = true;
     }
 
+    function setMouse(e) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    }
+    
     renderer.domElement.addEventListener('pointerdown', e => {
         if (paintMode && e.button === 0) {
             isPainting = true;
@@ -450,7 +353,6 @@ function init3DScene() {
     });
     window.addEventListener('pointerup', () => { isPainting = false; });
     
-    // Animation loop & Resizing
     function animate() {
         requestAnimationFrame(animate);
         controls.update();
@@ -466,6 +368,65 @@ function init3DScene() {
     
     window.addEventListener('resize', onResize);
     animate();
+}
 
-    // УДАЛЕНО: Неправильно расположенный и ненужный обработчик событий
+function create3DUI() {
+    // Paint Button
+    const paintBtn = document.createElement('button');
+    paintBtn.type = 'button';
+    paintBtn.id = 'paint-btn';
+    paintBtn.className = 'model-ui-btn';
+    paintBtn.innerHTML = `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(4 4) scale(1.5)"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></g></svg><span>Paint</span>`;
+
+    // Ready Button
+    const readyBtn = document.createElement('button');
+    readyBtn.type = 'button';
+    readyBtn.id = 'ready-btn';
+    readyBtn.className = 'model-ui-btn';
+    readyBtn.innerHTML = `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(4 4) scale(1.5)"><polyline points="20 6 9 17 4 12"/></g></svg><span>Ready</span>`;
+
+    // Brush Slider
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.className = 'brush-slider';
+    slider.min = 5; slider.max = 40; slider.value = 20;
+    const sliderLabel = document.createElement('div');
+    sliderLabel.className = 'brush-label';
+    sliderLabel.innerHTML = 'Size<br>Brush';
+
+    // Zoom Controls
+    const zoomControls = document.createElement('div');
+    zoomControls.className = 'zoom-controls';
+    const zoomInBtn = document.createElement('button');
+    zoomInBtn.type = 'button';
+    zoomInBtn.id = 'zoom-in-btn';
+    zoomInBtn.className = 'zoom-btn';
+    zoomInBtn.textContent = '+';
+    const zoomOutBtn = document.createElement('button');
+    zoomOutBtn.type = 'button';
+    zoomOutBtn.id = 'zoom-out-btn';
+    zoomOutBtn.className = 'zoom-btn';
+    zoomOutBtn.textContent = '−';
+    zoomControls.append(zoomOutBtn, zoomInBtn);
+
+    // Hint Icons
+    const hintIcons = document.createElement('div');
+    hintIcons.className = 'hint-icons';
+    const rotateIcon = document.createElement('div');
+    rotateIcon.className = 'hint-icon';
+    rotateIcon.innerHTML = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 4C11.5817 4 8 7.58172 8 12V20C8 24.4183 11.5817 28 16 28C20.4183 28 24 24.4183 24 20V12C24 7.58172 20.4183 4 16 4Z" stroke="#333" stroke-width="1.5" fill="none"/><path d="M16 4V12" stroke="#333" stroke-width="1.5"/><path d="M16 4C20.4183 4 24 7.58172 24 12H16V4Z" fill="#90EE90"/><rect x="15" y="7" width="2" height="4" rx="1" stroke="#333" stroke-width="1.5" fill="white"/><path d="M10 36H22" stroke="#333" stroke-width="1.5" stroke-linecap="round"/><path d="M12 34L10 36L12 38" stroke="#333" stroke-width="1.5" stroke-linecap="round"/><path d="M20 34L22 36L20 38" stroke="#333" stroke-width="1.5" stroke-linecap="round"/></svg><span>Rotate</span>`;
+    const zoomIcon = document.createElement('div');
+    zoomIcon.className = 'hint-icon';
+    zoomIcon.innerHTML = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 4C11.5817 4 8 7.58172 8 12V20C8 24.4183 11.5817 28 16 28C20.4183 28 24 24.4183 24 20V12C24 7.58172 20.4183 4 16 4Z" stroke="#333" stroke-width="1.5" fill="none"/><path d="M16 4V12" stroke="#333" stroke-width="1.5"/><path d="M16 4C11.5817 4 8 7.58172 8 12H16V4Z" fill="#90EE90"/><rect x="15" y="7" width="2" height="4" rx="1" stroke="#333" stroke-width="1.5" fill="white"/><path d="M32 12L32 20" stroke="#333" stroke-width="1.5" stroke-linecap="round"/><path d="M30 14L32 12L34 14" stroke="#333" stroke-width="1.5" stroke-linecap="round"/><path d="M30 18L32 20L34 18" stroke="#333" stroke-width="1.5" stroke-linecap="round"/></svg><span>Zoom</span>`;
+    hintIcons.append(rotateIcon, zoomIcon);
+    
+    // Gender Button
+    const genderBtn = document.createElement('button');
+    genderBtn.type = 'button';
+    genderBtn.id = 'gender-btn';
+    genderBtn.className = 'gender-selector-btn';
+    genderBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15.5 8.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z" stroke="#333" stroke-width="1.5"/><path d="M12 12v9m-2-2h4M17.5 4.5l-3-3m0 3l3-3" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Gender</span>`;
+
+    // ИСПРАВЛЕНИЕ: Возвращаем все элементы, включая genderBtn
+    return { paintBtn, readyBtn, slider, sliderLabel, zoomControls, zoomInBtn, zoomOutBtn, hintIcons, genderBtn };
 }
