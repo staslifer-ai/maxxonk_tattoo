@@ -254,6 +254,67 @@
             </div>
         </div>
     </section>
+    <form id="tattoo-form" name="tattoo-request" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" enctype="multipart/form-data">
+        
+        <p class="hidden">
+            <label>Don’t fill this out if you’re human: <input name="bot-field" /></label>
+        </p>
+        <input type="hidden" name="form-name" value="tattoo-request" />
+
+        <input type="hidden" id="hidden-body-spaces" name="body-spaces" />
+        <input type="hidden" id="hidden-appointment-date" name="appointment-date" />
+
+
+        <main id="main-content" class="step-section is-active">
+            </main>
+
+        <section id="form-section" class="step-section">
+            <form> <div class="form-card__group">
+                    <label for="fullname">Full name</label>
+                    <input type="text" id="fullname" name="fullname" placeholder="Your Name">
+                </div>
+                <div class="form-card__group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="Your Email">
+                </div>
+                <div class="form-card__group">
+                    <label for="phone">Phone</label>
+                    <input type="text" id="phone" name="phone" placeholder="Your Phone">
+                </div>
+                <div class="form-card__group">
+                    <label for="additional">Additional data <span class="tooltip" title="Any additional notes about your request">🛈</span></label>
+                    <textarea id="additional" name="additional" placeholder="Additional Information"></textarea>
+                </div>
+                </form>
+        </section>
+
+        <section id="body-selector-section" class="step-section">
+           </section>
+
+        <section id="tattoo-idea-section" class="step-section">
+            <div class="form-card__group">
+                    <label for="tattoo-description">Tattoo Description</label>
+                    <textarea id="tattoo-description" name="tattoo-description" placeholder="Your text"></textarea>
+                </div>
+                <div class="form-card__group">
+                    <label for="file-input">Reference Image</label>
+                    <div class="file-drop-area" id="file-drop-area">
+                        <input type="file" id="file-input" name="references[]" multiple accept="image/*" class="file-drop-area__input">
+                        </div>
+                    </div>
+            </section>
+        
+        <section id="schedule-section" class="step-section">
+            <div class="form-card__actions">
+                <button type="button" class="btn btn--secondary" data-target="tattoo-idea-section">Back</button>
+                <button type="submit" class="btn btn--primary" id="to-completed-btn">Next</button>
+            </div>
+        </section>
+
+        <section id="completed-section" class="step-section">
+           </section>
+
+    </form> <script src="js/main.js" type="module"></script>
 
     <script src="js/main.js" type="module"></script>
 

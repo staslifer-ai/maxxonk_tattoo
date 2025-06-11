@@ -383,4 +383,102 @@ function init3DScene() {
     });
   }
 });
+// ... ваш код ...
+
+// --- DOM Elements ---
+const DOMElements = {
+    // ... остальное ...
+    tattooForm: document.getElementById('tattoo-form'), // Добавляем саму форму
+    hiddenBodySpaces: document.getElementById('hidden-body-spaces'),
+    hiddenAppointmentDate: document.getElementById('hidden-appointment-date'),
+    // ...
+};
+
+// --- Main Initializer ---
+document.addEventListener('DOMContentLoaded', init);
+
+function init() {
+    setupNavigation();
+    setupBodySelector();
+    setupFileUpload();
+    setupCalendar();
+    setupFormSubmission(); // Добавляем новую функцию
+}
+
+// --- Navigation ---
+// Функция setupNavigation остается почти без изменений,
+// но теперь нам не нужна специальная логика для кнопки 'to-completed-btn',
+// так как она теперь типа 'submit'.
+
+// ... ваш код для setupBodySelector, setupFileUpload, setupCalendar ...
+
+
+// --- Data Collection & Form Submission ---
+
+// Эта функция теперь будет вызываться ПЕРЕД отправкой формы
+function prepareDataForSubmission() {
+    // 1. Собираем контактные данные (они уже в форме, Netlify их увидит сам)
+    // 2. Собираем описание тату (оно тоже уже в форме)
+    
+    // 3. Собираем данные о частях тела из appData и форматируем в строку
+    const bodySpacesText = appData.bodySpaces.map(space => 
+        `Part: ${space.part}, Size: ${space.size}${space.details ? ', Details: ' + space.details : ''}`
+    ).join('; ');
+    DOMElements.hiddenBodySpaces.value = bodySpacesText || 'Не указано';
+
+    // 4. Собираем дату
+    const selectedDateEl = DOMElements.calendarGrid.querySelector('.is-selected');
+    const monthYear = document.querySelector('#schedule-section .calendar__header h3').textContent;
+    const appointmentDate = selectedDateEl ? `${selectedDateEl.textContent} ${monthYear}` : 'Не выбрана';
+    DOMElements.hiddenAppointmentDate.value = appointmentDate;
+
+    // Файлы Netlify заберет сам из <input type="file" name="references[]">
+}
+
+function setupFormSubmission() {
+    DOMElements.tattooForm.addEventListener('submit', (event) => {
+        // Предотвращаем стандартную отправку, чтобы успеть показать экран "Спасибо"
+        event.preventDefault(); 
+        
+        // 1. Собираем все динамические данные в скрытые поля
+        prepareDataForSubmission();
+        
+        // 2. Показываем пользователю экран "Завершено"
+        showScreen('completed-section');
+        
+        // 3. Отправляем данные формы в Netlify через AJAX
+        const formData = new FormData(DOMElements.tattooForm);
+        fetch('/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams(formData).toString()
+        }).then(() => {
+            console.log('Form successfully submitted to Netlify');
+            // Здесь можно, например, через 2-3 секунды перенаправить на главную
+            // setTimeout(() => showScreen('main-content'), 3000);
+        }).catch((error) => alert(error));
+    });
+    
+    // Переносим логику кнопки "Done" сюда
+    document.getElementById('done-btn').addEventListener('click', () => {
+       showScreen('main-content');
+       // опционально, можно сбросить форму
+       DOMElements.tattooForm.reset(); 
+       // и очистить JS-данные
+       // resetAppData(); 
+    });
+}
+
+
+// УДАЛИТЕ этот фрагмент из вашего кода, так как он был в неправильном месте
+/*
+ document.addEventListener('DOMContentLoaded', () => {
+    const submitButton = document.getElementById('to-completed-btn');
+    if (submitButton) {
+        submitButton.addEventListener('click', () => {
+            document.getElementById('tattoo-form').submit();
+        });
+    }
+ });
+*/
 }
