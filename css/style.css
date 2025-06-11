@@ -735,3 +735,27 @@ textarea {
     line-height: 1.5;
     margin: 0; /* Убираем лишние отступы у параграфа */
 }
+.hint-icons {
+    position: absolute;
+    bottom: 20px;
+    left: 80px; /* Отступ слева, чтобы разместить правее кнопок зума */
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Расстояние между иконками */
+}
+
+/* Стили для каждой отдельной иконки-подсказки */
+.hint-icon {
+    display: flex;
+    flex-direction: column; /* Иконка сверху, текст снизу */
+    align-items: center;
+    gap: 4px; /* Расстояние между иконкой и текстом */
+    color: var(--text-color-light);
+    font-size: 12px;
+}
+
+.hint-icon svg {
+    /* SVG уже имеет размер, но на всякий случай можно задать его здесь */
+    width: 28px;
+    height: 28px;
+}

@@ -375,7 +375,39 @@ function init3DScene() {
 
         zoomControls.append(zoomOutBtn, zoomInBtn);
 
-        DOMElements.modelWrapper.append(paintBtn, readyBtn, slider, sliderLabel, zoomControls);
+        const hintIcons = document.createElement('div');
+            hintIcons.className = 'hint-icons';
+
+        // Создаем иконку "Вращение"
+        const rotateIcon = document.createElement('div');
+        rotateIcon.className = 'hint-icon';
+        rotateIcon.innerHTML = `
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 5C11.5817 5 8 8.58172 8 13V21C8 25.4183 11.5817 29 16 29C20.4183 29 24 25.4183 24 21V13C24 8.58172 20.4183 5 16 5Z" stroke="#333" stroke-width="1.5"/>
+            <path d="M16 5V3" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M10 13H22" stroke="#333" stroke-width="1.5"/>
+            <path d="M15.5 8H16.5" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M22.3536 19.6464C22.5488 19.4512 22.5488 19.1346 22.3536 18.9393L19.1716 15.7574C18.9763 15.5621 18.6597 15.5621 18.4645 15.7574C18.2692 15.9526 18.2692 16.2692 18.4645 16.4645L21.2929 19.2929L18.4645 22.1213C18.2692 22.3166 18.2692 22.6332 18.4645 22.8284C18.6597 23.0237 18.9763 23.0237 19.1716 22.8284L22.3536 19.6464ZM10 19.5H21.6464V18.5H10V19.5Z" fill="#333"/>
+            <path d="M12.5 8H9C9 9.10457 9.89543 10 11 10H13C14.1046 10 15 9.10457 15 8H12.5Z" fill="#90EE90"/>
+        </svg>
+        <span>Rotate</span>
+        `;
+
+        // Создаем иконку "Зум"
+        const zoomIcon = document.createElement('div');
+        zoomIcon.className = 'hint-icon';
+        zoomIcon.innerHTML = `
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 5C11.5817 5 8 8.58172 8 13V21C8 25.4183 11.5817 29 16 29C20.4183 29 24 25.4183 24 21V13C24 8.58172 20.4183 5 16 5Z" stroke="#333" stroke-width="1.5"/>
+            <path d="M16 5V3" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M10 13H22" stroke="#333" stroke-width="1.5"/>
+            <rect x="15" y="8" width="2" height="5" rx="1" fill="#90EE90"/>
+        </svg>
+        <span>Zoom</span>
+        `;
+        hintIcons.append(rotateIcon, zoomIcon);
+
+        DOMElements.modelWrapper.append(paintBtn, readyBtn, slider, sliderLabel, zoomControls, hintIcons);
     }
     
     function setMouse(e) {
