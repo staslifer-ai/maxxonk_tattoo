@@ -24,40 +24,41 @@
         </a>
     </header>
 
-    <main id="main-content" class="step-section is-active">
-        <h1 class="main-title">Step Into Your Tattoo Journey</h1>
-        <p class="main-subtitle">Ready to turn your ideas into ink? Explore our latest creations, get inspired,<br> and start building a one-of-a-kind design that's all about you.</p>
-        
-        <section class="recent-work">
-            <h2 class="section-title">Our Recent Work</h2>
-            <div class="gallery">
-                <div class="gallery__item"><img src="https://placehold.co/180x180/EAEAEA/808080?text=Tattoo+1" alt="Tattoo 1"><div class="gallery__caption">Geometric Minimalism</div></div>
-                <div class="gallery__item"><img src="https://placehold.co/180x180/EAEAEA/808080?text=Tattoo+2" alt="Tattoo 2"><div class="gallery__caption">Watercolor Bloom</div></div>
-                <div class="gallery__item"><img src="https://placehold.co/180x180/EAEAEA/808080?text=Tattoo+3" alt="Tattoo 3"><div class="gallery__caption">Fine Line Portrait</div></div>
-                <div class="gallery__item"><img src="https://placehold.co/180x180/EAEAEA/808080?text=Tattoo+4" alt="Tattoo 4"><div class="gallery__caption">Blackwork Mandala</div></div>
-                <div class="gallery__item"><img src="https://placehold.co/180x180/EAEAEA/808080?text=Tattoo+5" alt="Tattoo 5"><div class="gallery__caption">Japanese Dragon</div></div>
-            </div>
-        </section>
-        
-        <button class="btn btn--primary" data-target="form-section">Start Your Design</button>
-    </main>
+    <form id="tattoo-form" name="tattoo-request" method="POST" enctype="multipart/form-data">
 
-    <section id="form-section" class="step-section">
-        <nav class="step-nav">
-            <ul>
-                <li class="active">Tattoo Request</li>
-                <li>Body Selector</li>
-                <li>Tattoo Idea</li>
-                <li>Schedule date</li>
-                <li>Completed</li>
-            </ul>
-        </nav>
-        <div class="form-card">
-            <header class="form-card__header">
-                <h2>Submit Your Tattoo Request</h2>
-                <p>Share your contact details and any additional info we should know.<br>We'll reach out soon to help bring your tattoo idea to life!</p>
-            </header>
-            <form>
+        <main id="main-content" class="step-section is-active">
+            <h1 class="main-title">Step Into Your Tattoo Journey</h1>
+            <p class="main-subtitle">Ready to turn your ideas into ink? Explore our latest creations, get inspired,<br> and start building a one-of-a-kind design that's all about you.</p>
+            
+            <section class="recent-work">
+                <h2 class="section-title">Our Recent Work</h2>
+                <div class="gallery">
+                    <div class="gallery__item"><img src="https://placehold.co/180x180/EAEAEA/808080?text=Tattoo+1" alt="Tattoo 1"><div class="gallery__caption">Geometric Minimalism</div></div>
+                    <div class="gallery__item"><img src="https://placehold.co/180x180/EAEAEA/808080?text=Tattoo+2" alt="Tattoo 2"><div class="gallery__caption">Watercolor Bloom</div></div>
+                    <div class="gallery__item"><img src="https://placehold.co/180x180/EAEAEA/808080?text=Tattoo+3" alt="Tattoo 3"><div class="gallery__caption">Fine Line Portrait</div></div>
+                    <div class="gallery__item"><img src="https://placehold.co/180x180/EAEAEA/808080?text=Tattoo+4" alt="Tattoo 4"><div class="gallery__caption">Blackwork Mandala</div></div>
+                    <div class="gallery__item"><img src="https://placehold.co/180x180/EAEAEA/808080?text=Tattoo+5" alt="Tattoo 5"><div class="gallery__caption">Japanese Dragon</div></div>
+                </div>
+            </section>
+            
+            <button type="button" class="btn btn--primary" data-target="form-section">Start Your Design</button>
+        </main>
+
+        <section id="form-section" class="step-section">
+            <nav class="step-nav">
+                <ul>
+                    <li class="active">Tattoo Request</li>
+                    <li>Body Selector</li>
+                    <li>Tattoo Idea</li>
+                    <li>Schedule date</li>
+                    <li>Completed</li>
+                </ul>
+            </nav>
+            <div class="form-card">
+                <header class="form-card__header">
+                    <h2>Submit Your Tattoo Request</h2>
+                    <p>Share your contact details and any additional info we should know.<br>We'll reach out soon to help bring your tattoo idea to life!</p>
+                </header>
                 <div class="form-card__group">
                     <label for="fullname">Full name</label>
                     <input type="text" id="fullname" name="fullname" placeholder="Your Name">
@@ -78,85 +79,81 @@
                     <button type="button" class="btn btn--secondary" data-target="main-content">Back</button>
                     <button type="button" class="btn btn--primary" data-target="body-selector-section">Next</button>
                 </div>
-            </form>
-        </div>
-    </section>
-
-    <section id="body-selector-section" class="step-section">
-        <nav class="step-nav">
-             <ul>
-                <li class="completed">Tattoo Request</li>
-                <li class="active">Body Selector</li>
-                <li>Tattoo Idea</li>
-                <li>Schedule date</li>
-                <li>Completed</li>
-            </ul>
-        </nav>
-        <div class="form-card">
-            <header class="form-card__header">
-                <h2>Body Zone Selector</h2>
-            </header>
-            <div class="tabs">
-                <button class="tabs__btn" id="tab-3d">3D‑Model</button>
-                <button class="tabs__btn is-active" id="tab-manual">Manual entry</button>
             </div>
-            
-            <div id="model-wrapper" class="model-wrapper"></div>
-            
-            <form id="manual-form">
-                <div class="form-card__group">
-                    <label for="body-part">Body part</label>
-                    <select id="body-part" class="form-card__input">
-                        <option>Forearm</option>
-                        <option>Upper Arm</option>
-                        <option>Back</option>
-                        <option>Chest</option>
-                        <option>Leg</option>
-                    </select>
-                </div>
-                 <div class="form-card__group">
-                    <label for="body-details">Additional details <span class="tooltip" title="e.g., inner side, near the elbow...">ⓘ</span></label>
-                    <input id="body-details" type="text" placeholder="e.g., inner side, near the elbow..." class="form-card__input">
-                </div>
-                <div class="form-card__group--row">
-                    <label for="width-slider">Width</label>
-                    <input type="range" min="5" max="30" value="10" id="width-slider" class="slider">
-                    <span><span id="width-value">10</span> cm</span>
-                </div>
-                <div class="form-card__group--row">
-                    <label for="height-slider">Height</label>
-                    <input type="range" min="5" max="30" value="15" id="height-slider" class="slider">
-                    <span><span id="height-value">15</span> cm</span>
-                </div>
-                <button class="btn btn--subtle" type="button" id="add-space-btn"><span>+</span> Add space</button>
-            </form>
-            
-            <div id="body-parts-cards" class="cards-container">
-                </div>
-            
-            <div class="form-card__actions">
-                <button type="button" class="btn btn--secondary" data-target="form-section">Back</button>
-                <button type="button" class="btn btn--primary" data-target="tattoo-idea-section">Next</button>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <section id="tattoo-idea-section" class="step-section">
-        <nav class="step-nav">
-             <ul>
-                <li class="completed">Tattoo Request</li>
-                <li class="completed">Body Selector</li>
-                <li class="active">Tattoo Idea</li>
-                <li>Schedule date</li>
-                <li>Completed</li>
-            </ul>
-        </nav>
-        <div class="form-card">
-            <header class="form-card__header">
-                <h2>Describe Your Tattoo Idea</h2>
-                <p>Help us understand your vision by describing your tattoo idea and uploading reference images.</p>
-            </header>
-            <form>
+        <section id="body-selector-section" class="step-section">
+            <nav class="step-nav">
+                 <ul>
+                    <li class="completed">Tattoo Request</li>
+                    <li class="active">Body Selector</li>
+                    <li>Tattoo Idea</li>
+                    <li>Schedule date</li>
+                    <li>Completed</li>
+                </ul>
+            </nav>
+            <div class="form-card">
+                <header class="form-card__header">
+                    <h2>Body Zone Selector</h2>
+                </header>
+                <div class="tabs">
+                    <button class="tabs__btn" id="tab-3d">3D‑Model</button>
+                    <button class="tabs__btn is-active" id="tab-manual">Manual entry</button>
+                </div>
+                
+                <div id="model-wrapper" class="model-wrapper"></div>
+                
+                <div id="manual-form"> <div class="form-card__group">
+                        <label for="body-part">Body part</label>
+                        <select id="body-part" name="body-part-selector" class="form-card__input"> <option>Forearm</option>
+                            <option>Upper Arm</option>
+                            <option>Back</option>
+                            <option>Chest</option>
+                            <option>Leg</option>
+                        </select>
+                    </div>
+                     <div class="form-card__group">
+                        <label for="body-details">Additional details <span class="tooltip" title="e.g., inner side, near the elbow...">ⓘ</span></label>
+                        <input id="body-details" type="text" placeholder="e.g., inner side, near the elbow..." class="form-card__input">
+                    </div>
+                    <div class="form-card__group--row">
+                        <label for="width-slider">Width</label>
+                        <input type="range" min="5" max="30" value="10" id="width-slider" class="slider">
+                        <span><span id="width-value">10</span> cm</span>
+                    </div>
+                    <div class="form-card__group--row">
+                        <label for="height-slider">Height</label>
+                        <input type="range" min="5" max="30" value="15" id="height-slider" class="slider">
+                        <span><span id="height-value">15</span> cm</span>
+                    </div>
+                    <button class="btn btn--subtle" type="button" id="add-space-btn"><span>+</span> Add space</button>
+                </div>
+                
+                <div id="body-parts-cards" class="cards-container"></div>
+                
+                <div class="form-card__actions">
+                    <button type="button" class="btn btn--secondary" data-target="form-section">Back</button>
+                    <button type="button" class="btn btn--primary" data-target="tattoo-idea-section">Next</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="tattoo-idea-section" class="step-section">
+            <nav class="step-nav">
+                 <ul>
+                    <li class="completed">Tattoo Request</li>
+                    <li class="completed">Body Selector</li>
+                    <li class="active">Tattoo Idea</li>
+                    <li>Schedule date</li>
+                    <li>Completed</li>
+                </ul>
+            </nav>
+            <div class="form-card">
+                <header class="form-card__header">
+                    <h2>Describe Your Tattoo Idea</h2>
+                    <p>Help us understand your vision by describing your tattoo idea and uploading reference images.</p>
+                </header>
+                
                 <div class="form-card__group">
                     <label for="tattoo-description">Tattoo Description</label>
                     <textarea id="tattoo-description" name="tattoo-description" placeholder="Your text"></textarea>
@@ -164,7 +161,7 @@
                 <div class="form-card__group">
                     <label for="file-input">Reference Image</label>
                     <div class="file-drop-area" id="file-drop-area">
-                        <input type="file" id="file-input" multiple accept="image/*" class="file-drop-area__input">
+                        <input type="file" id="file-input" name="references" multiple accept="image/*" class="file-drop-area__input">
                         <svg class="file-drop-area__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M7.646 5.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2z"/><path d="M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.579C14.758 6.804 16 8.137 16 9.773 16 11.569 14.502 13 12.687 13H3.781C1.708 13 0 11.366 0 9.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383zm.653.757c-.757.653-1.153 1.44-1.153 2.056v.448l-.445.049C2.064 6.805 1 7.952 1 9.318 1 10.785 2.23 12 3.781 12h8.906C13.98 12 15 10.988 15 9.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 4.825 10.328 3 8 3a4.53 4.53 0 0 0-2.941 1.1z"/></svg>
                         <p>Drag and drop up to 5 images here</p>
                         <p>or</p>
@@ -176,147 +173,77 @@
                     <button type="button" class="btn btn--secondary" data-target="body-selector-section">Back</button>
                     <button type="button" class="btn btn--primary" data-target="schedule-section">Next</button>
                 </div>
-            </form>
-        </div>
-    </section>
-    
-    <section id="schedule-section" class="step-section">
-        <nav class="step-nav">
-            <ul>
-                <li class="completed">Tattoo Request</li>
-                <li class="completed">Body Selector</li>
-                <li class="completed">Tattoo Idea</li>
-                <li class="active">Schedule date</li>
-                <li>Completed</li>
-            </ul>
-        </nav>
-        <div class="form-card">
-            <header class="form-card__header">
-                <h2>Select Your Appointment Date</h2>
-                <p>Pick a convenient date for your tattoo session</p>
-            </header>
-            <div class="calendar">
-                <div class="calendar__header">
-                    <h3>July 2025</h3>
-                </div>
-                <div class="calendar__grid">
-                    <div class="calendar__day-name">mo</div><div class="calendar__day-name">tu</div><div class="calendar__day-name">we</div><div class="calendar__day-name">th</div><div class="calendar__day-name">fr</div><div class="calendar__day-name">sa</div><div class="calendar__day-name">su</div>
-                    <div class="calendar__date is-other-month">29</div><div class="calendar__date is-other-month">30</div>
-                    <div class="calendar__date">1</div><div class="calendar__date">2</div><div class="calendar__date">3</div><div class="calendar__date">4</div><div class="calendar__date">5</div>
-                    <div class="calendar__date">6</div><div class="calendar__date">7</div><div class="calendar__date">8</div><div class="calendar__date is-selected">9</div><div class="calendar__date">10</div><div class="calendar__date">11</div><div class="calendar__date">12</div>
-                    <div class="calendar__date">13</div><div class="calendar__date">14</div><div class="calendar__date">15</div><div class="calendar__date">16</div><div class="calendar__date">17</div><div class="calendar__date">18</div><div class="calendar__date">19</div>
-                    <div class="calendar__date">20</div><div class="calendar__date">21</div><div class="calendar__date">22</div><div class="calendar__date">23</div><div class="calendar__date">24</div><div class="calendar__date">25</div><div class="calendar__date">26</div>
-                    <div class="calendar__date">27</div><div class="calendar__date">28</div><div class="calendar__date">29</div><div class="calendar__date">30</div><div class="calendar__date">31</div>
-                    <div class="calendar__date is-other-month">1</div><div class="calendar__date is-other-month">2</div>
-                </div>
             </div>
-            <div class="info-box">
-                <i class="info-box__icon">i</i>
-                <p>Our artist will contact you to confirm the exact time on your selected date.</p>
-            </div>
-            <div class="form-card__actions">
-                <button type="button" class="btn btn--secondary" data-target="tattoo-idea-section">Back</button>
-                <button type="button" class="btn btn--primary" id="to-completed-btn">Next</button>
-            </div>
-        </div>
-    </section>
-
-    <form
-  id="tattoo-form"
-  method="POST"
-  enctype="multipart/form-data"
-  action="/.netlify/functions/sendForm"
->
-
-    <section id="completed-section" class="step-section">
-         <nav class="step-nav">
-            <ul>
-                <li class="completed">Tattoo Request</li>
-                <li class="completed">Body Selector</li>
-                <li class="completed">Tattoo Idea</li>
-                <li class="completed">Schedule date</li>
-                <li class="active">Completed</li>
-            </ul>
-        </nav>
-        <div class="form-card">
-            <div class="completed-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
-                </svg>
-            </div>
-            <header class="form-card__header">
-                <h2>Thank you for your application!</h2>
-                <p>We have received your request.<br>Our artist will contact you soon to confirm all details.</p>
-            </header>
-            <div class="form-card__actions">
-                 <button type="button" class="btn btn--secondary" data-target="schedule-section">Back</button>
-                 <button type="button" class="btn btn--primary" data-target="main-content" id="done-btn">Done</button>
-            </div>
-        </div>
-    </section>
-    <form id="tattoo-form" name="tattoo-request" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" enctype="multipart/form-data">
-        
-        <p class="hidden">
-            <label>Don’t fill this out if you’re human: <input name="bot-field" /></label>
-        </p>
-        <input type="hidden" name="form-name" value="tattoo-request" />
-
-        <input type="hidden" id="hidden-body-spaces" name="body-spaces" />
-        <input type="hidden" id="hidden-appointment-date" name="appointment-date" />
-
-
-        <main id="main-content" class="step-section is-active">
-            </main>
-
-        <section id="form-section" class="step-section">
-            <form> <div class="form-card__group">
-                    <label for="fullname">Full name</label>
-                    <input type="text" id="fullname" name="fullname" placeholder="Your Name">
-                </div>
-                <div class="form-card__group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" placeholder="Your Email">
-                </div>
-                <div class="form-card__group">
-                    <label for="phone">Phone</label>
-                    <input type="text" id="phone" name="phone" placeholder="Your Phone">
-                </div>
-                <div class="form-card__group">
-                    <label for="additional">Additional data <span class="tooltip" title="Any additional notes about your request">🛈</span></label>
-                    <textarea id="additional" name="additional" placeholder="Additional Information"></textarea>
-                </div>
-                </form>
         </section>
-
-        <section id="body-selector-section" class="step-section">
-           </section>
-
-        <section id="tattoo-idea-section" class="step-section">
-            <div class="form-card__group">
-                    <label for="tattoo-description">Tattoo Description</label>
-                    <textarea id="tattoo-description" name="tattoo-description" placeholder="Your text"></textarea>
-                </div>
-                <div class="form-card__group">
-                    <label for="file-input">Reference Image</label>
-                    <div class="file-drop-area" id="file-drop-area">
-                        <input type="file" id="file-input" name="references[]" multiple accept="image/*" class="file-drop-area__input">
-                        </div>
-                    </div>
-            </section>
         
         <section id="schedule-section" class="step-section">
-            <div class="form-card__actions">
-                <button type="button" class="btn btn--secondary" data-target="tattoo-idea-section">Back</button>
-                <button type="submit" class="btn btn--primary" id="to-completed-btn">Next</button>
+            <nav class="step-nav">
+                <ul>
+                    <li class="completed">Tattoo Request</li>
+                    <li class="completed">Body Selector</li>
+                    <li class="completed">Tattoo Idea</li>
+                    <li class="active">Schedule date</li>
+                    <li>Completed</li>
+                </ul>
+            </nav>
+            <div class="form-card">
+                <header class="form-card__header">
+                    <h2>Select Your Appointment Date</h2>
+                    <p>Pick a convenient date for your tattoo session</p>
+                </header>
+                <div class="calendar">
+                    <div class="calendar__header">
+                        <h3>July 2025</h3>
+                    </div>
+                    <div class="calendar__grid">
+                        <div class="calendar__day-name">mo</div><div class="calendar__day-name">tu</div><div class="calendar__day-name">we</div><div class="calendar__day-name">th</div><div class="calendar__day-name">fr</div><div class="calendar__day-name">sa</div><div class="calendar__day-name">su</div>
+                        <div class="calendar__date is-other-month">29</div><div class="calendar__date is-other-month">30</div>
+                        <div class="calendar__date">1</div><div class="calendar__date">2</div><div class="calendar__date">3</div><div class="calendar__date">4</div><div class="calendar__date">5</div>
+                        <div class="calendar__date">6</div><div class="calendar__date">7</div><div class="calendar__date">8</div><div class="calendar__date is-selected">9</div><div class="calendar__date">10</div><div class="calendar__date">11</div><div class="calendar__date">12</div>
+                        <div class="calendar__date">13</div><div class="calendar__date">14</div><div class="calendar__date">15</div><div class="calendar__date">16</div><div class="calendar__date">17</div><div class="calendar__date">18</div><div class="calendar__date">19</div>
+                        <div class="calendar__date">20</div><div class="calendar__date">21</div><div class="calendar__date">22</div><div class="calendar__date">23</div><div class="calendar__date">24</div><div class="calendar__date">25</div><div class="calendar__date">26</div>
+                        <div class="calendar__date">27</div><div class="calendar__date">28</div><div class="calendar__date">29</div><div class="calendar__date">30</div><div class="calendar__date">31</div>
+                        <div class="calendar__date is-other-month">1</div><div class="calendar__date is-other-month">2</div>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <i class="info-box__icon">i</i>
+                    <p>Our artist will contact you to confirm the exact time on your selected date.</p>
+                </div>
+                <div class="form-card__actions">
+                    <button type="button" class="btn btn--secondary" data-target="tattoo-idea-section">Back</button>
+                    <button type="submit" class="btn btn--primary" id="to-completed-btn">Next</button>
+                </div>
             </div>
         </section>
 
         <section id="completed-section" class="step-section">
-           </section>
+             <nav class="step-nav">
+                <ul>
+                    <li class="completed">Tattoo Request</li>
+                    <li class="completed">Body Selector</li>
+                    <li class="completed">Tattoo Idea</li>
+                    <li class="completed">Schedule date</li>
+                    <li class="active">Completed</li>
+                </ul>
+            </nav>
+            <div class="form-card">
+                <div class="completed-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                    </svg>
+                </div>
+                <header class="form-card__header">
+                    <h2>Thank you for your application!</h2>
+                    <p>We have received your request.<br>Our artist will contact you soon to confirm all details.</p>
+                </header>
+                <div class="form-card__actions">
+                     <button type="button" class="btn btn--secondary" data-target="schedule-section">Back</button>
+                     <button type="button" class="btn btn--primary" data-target="main-content" id="done-btn">Done</button>
+                </div>
+            </div>
+        </section>
 
     </form> <script src="js/main.js" type="module"></script>
-
-    <script src="js/main.js" type="module"></script>
-
 </body>
 </html>
