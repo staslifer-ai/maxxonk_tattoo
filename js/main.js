@@ -66,11 +66,9 @@ function setupNavigation() {
     });
     
     DOMElements.toCompletedBtn.addEventListener('click', () => {
-        // Collect data from the final steps
-        collectAllData();
-        // Show the final screen without sending data
-        showScreen('completed-section');
-    });
+    collectAllData();
+    document.getElementById('tattoo-form').submit(); // ← отправляем форму!
+});
 }
 
 // --- Data Collection ---
