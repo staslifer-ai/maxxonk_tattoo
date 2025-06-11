@@ -356,7 +356,26 @@ function init3DScene() {
         sliderLabel.className = 'brush-label';
         sliderLabel.innerHTML = 'Size<br>Brush';
 
-        DOMElements.modelWrapper.append(paintBtn, readyBtn, slider, sliderLabel);
+        const zoomControls = document.createElement('div');
+        zoomControls.className = 'zoom-controls'; // Класс для стилизации
+
+        // Кнопка "Приблизить" (+)
+        const zoomInBtn = document.createElement('button');
+        zoomInBtn.type = 'button'; // Важно, чтобы не отправлять форму!
+        zoomInBtn.id = 'zoom-in-btn';
+        zoomInBtn.className = 'zoom-btn';
+        zoomInBtn.textContent = '+';
+    
+        // Кнопка "Отдалить" (-)
+        const zoomOutBtn = document.createElement('button');
+        zoomOutBtn.type = 'button'; // Важно, чтобы не отправлять форму!
+        zoomOutBtn.id = 'zoom-out-btn';
+        zoomOutBtn.className = 'zoom-btn';
+        zoomOutBtn.textContent = '−'; // Используем правильный символ минуса
+
+        zoomControls.append(zoomOutBtn, zoomInBtn);
+
+        DOMElements.modelWrapper.append(paintBtn, readyBtn, slider, sliderLabel, zoomControls);
     }
     
     function setMouse(e) {

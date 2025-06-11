@@ -673,3 +673,34 @@ textarea {
         width: 100%;
     }
 }
+.zoom-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Расстояние между кнопками */
+    z-index: 10; /* Чтобы были поверх других элементов */
+}
+
+.zoom-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 2px solid var(--dark-color);
+    background-color: var(--background-color);
+    color: var(--dark-color);
+    border-radius: 50%; /* Делаем кнопки круглыми */
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.zoom-btn:hover {
+    background-color: #f0f0f0; /* Легкий фон при наведении */
+}
