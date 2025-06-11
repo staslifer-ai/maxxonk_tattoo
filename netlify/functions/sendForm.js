@@ -63,7 +63,7 @@ exports.handler = async function(event, context) {
         // === Письмо для студии ===
         await transporter.sendMail({
           from: `"Форма с сайта" <${process.env.GMAIL_USER}>`,
-          to: 'antonfilonenko95@gmail.com', // ← Замените на вашу почту
+          to: 'stanislavlifer6mail@gmail.com', // ← Замените на вашу почту
           subject: `🖋 Новая заявка на тату от ${fields.fullname}`,
           html: emailBody,
           attachments: files
