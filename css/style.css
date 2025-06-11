@@ -704,3 +704,34 @@ textarea {
 .zoom-btn:hover {
     background-color: #f0f0f0; /* Легкий фон при наведении */
 }
+.info-box {
+    display: flex;
+    /* align-items: center; если текст многострочный, лучше выровнять по верху */
+    align-items: flex-start;
+    gap: 12px;
+    background-color: var(--primary-color-light); /* Светло-фиолетовый фон */
+    border-radius: var(--border-radius-m);
+    padding: 15px;
+    margin-top: 30px; /* Отступ сверху от 3D-модели */
+}
+
+.info-box__icon {
+    background-color: var(--primary-color); /* Основной фиолетовый цвет */
+    color: white;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-style: normal;
+    font-weight: bold;
+    flex-shrink: 0; /* Запрещаем иконке сжиматься */
+}
+
+.info-box p {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.5;
+    margin: 0; /* Убираем лишние отступы у параграфа */
+}
