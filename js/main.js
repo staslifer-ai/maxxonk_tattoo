@@ -6,10 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const appData = {
     contact: {},
     bodySpaces: [],
-    tattooIdea: {
-        description: '',
-        references: []
-    },
+    tattooIdea: { description: '', references: [], screenshot3D: null },
     appointmentDate: ''
 };
 

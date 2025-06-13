@@ -27,11 +27,11 @@
     <form id="tattoo-form" name="tattoo-request" method="POST" enctype="multipart/form-data">
 
         <main id="main-content" class="step-section is-active">
-            <h1 class="main-title">Step Into Your Tattoo Journey</h1>
-            <p class="main-subtitle">Ready to turn your ideas into ink? Explore our latest creations, get inspired,<br> and start building a one-of-a-kind design that's all about you.</p>
+            <h1 class="main-title">Book Your Personal Tattoo Session</h1>
+            <p class="main-subtitle">Ready to bring your idea to life? Explore our work and choose the perfect place for your new tattoo.</p>
             
             <section class="recent-work">
-                <h2 class="section-title">My Recent Work</h2>
+                <h2 class="section-title">Recent Tattoos</h2>
                 <div class="gallery">
                     <div class="gallery__item"><img src="img/img1.jpeg" alt="Tattoo 1"></div>
                     <div class="gallery__item"><img src="img/img2.jpeg" alt="Tattoo 2"></div>
@@ -56,8 +56,8 @@
             </nav>
             <div class="form-card">
                 <header class="form-card__header">
-                    <h2>Submit Your Tattoo Request</h2>
-                    <p>Share your contact details and any additional info we should know.<br>We'll reach out soon to help bring your tattoo idea to life!</p>
+                    <h2>Request a Tattoo Consultation</h2>
+                    <p>Tell us about your idea and how to contact you. Our artist will get in touch to discuss the details.</p>
                 </header>
                 <div class="form-card__group">
                     <label for="fullname">Full name</label>
@@ -94,7 +94,7 @@
             </nav>
             <div class="form-card">
                 <header class="form-card__header">
-                    <h2>Body Zone Selector</h2>
+                    <h2>Choose Where You Want Your Tattoo</h2>
                 </header>
                 <div class="tabs">
                     <button type="button" class="tabs__btn" id="tab-3d">3D‑Model</button>
@@ -105,12 +105,43 @@
                 
                 <div id="manual-form"> <div class="form-card__group">
                         <label for="body-part">Body part</label>
-                        <select id="body-part" name="body-part-selector" class="form-card__input"> <option>Forearm</option>
-                            <option>Upper Arm</option>
-                            <option>Back</option>
-                            <option>Chest</option>
-                            <option>Leg</option>
-                        </select>
+                        <select id="body-part" name="body-part-selector" class="form-card__input">
+    <option disabled selected value="">Select Body Part</option>
+    <optgroup label="Arms">
+        <option>Forearm</option>
+        <option>Upper Arm</option>
+        <option>Elbow</option>
+        <option>Hand</option>
+        <option>Fingers</option>
+    </optgroup>
+    <optgroup label="Legs">
+        <option>Thigh</option>
+        <option>Calf</option>
+        <option>Knee</option>
+        <option>Ankle</option>
+        <option>Foot</option>
+        <option>Toes</option>
+    </optgroup>
+    <optgroup label="Torso">
+        <option>Chest</option>
+        <option>Stomach</option>
+        <option>Back (Upper)</option>
+        <option>Back (Lower)</option>
+        <option>Ribs</option>
+        <option>Side (Flank)</option>
+    </optgroup>
+    <optgroup label="Head & Neck">
+        <option>Neck (Front)</option>
+        <option>Neck (Back)</option>
+        <option>Head</option>
+        <option>Face</option>
+        <option>Ears</option>
+    </optgroup>
+    <optgroup label="Other">
+        <option>Hip</option>
+        <option>Buttocks</option>
+    </optgroup>
+</select>
                     </div>
                      <div class="form-card__group">
                         <label for="body-details">Additional details <span class="tooltip" title="e.g., inner side, near the elbow...">ⓘ</span></label>
@@ -153,8 +184,8 @@
             </nav>
             <div class="form-card">
                 <header class="form-card__header">
-                    <h2>Describe Your Tattoo Idea</h2>
-                    <p>Help us understand your vision by describing your tattoo idea and uploading reference images.</p>
+                    <h2>Share Your Tattoo Concept</h2>
+                    <p>Describe your tattoo idea and upload any images that inspire you.</p>
                 </header>
                 
                 <div class="form-card__group">
@@ -191,8 +222,8 @@
             </nav>
             <div class="form-card">
                 <header class="form-card__header">
-                    <h2>Select Your Appointment Date</h2>
-                    <p>Pick a convenient date for your tattoo session</p>
+                    <h2>Pick a Convenient Date for Your Tattoo Session</h2>
+                    <p>Choose a date that works for you. We will contact you to confirm your appointment.</p>
                 </header>
                 <div class="calendar">
                     <div class="calendar__header">
@@ -237,8 +268,8 @@
                     </svg>
                 </div>
                 <header class="form-card__header">
-                    <h2>Thank you for your application!</h2>
-                    <p>We have received your request.<br>Our artist will contact you soon to confirm all details.</p>
+                    <h2>Thank You! Your Request Has Been Received!</h2>
+                    <p>We've received your request.<br>We will contact you soon to finalize the details of your tattoo session.</p>
                 </header>
                 <div class="form-card__actions">
                      <button type="button" class="btn btn--secondary" data-target="schedule-section">Back</button>

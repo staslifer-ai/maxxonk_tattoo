@@ -254,6 +254,9 @@ textarea {
   padding: 0;
   margin-bottom: 40px;
   position: relative;
+  max-width: 800px; /* ограничим по макету */
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .step-nav ul::before {
@@ -265,6 +268,7 @@ textarea {
   height: 1px;
   background-color: var(--background-gray);
   z-index: 1;
+  width: 100%; /* по ширине ul */
 }
 
 .step-nav li {
@@ -278,7 +282,7 @@ textarea {
 }
 
 .step-nav li.completed {
-  color: var(--primary-color);
+  color: #888;
 }
 
 .step-nav li.active {
@@ -296,6 +300,15 @@ textarea {
   background-color: #000;
   border-radius: 2px;
 }
+
+.step-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
 
 /* ==========================================================================
    6. Screen Specific Styles
