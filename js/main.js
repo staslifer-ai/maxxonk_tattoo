@@ -13,6 +13,35 @@ function dataURLtoBlob(dataURL) {
     return new Blob([array], { type: mime });
 }
 
+// Перемещено сюда как единое определение
+async function captureModelScreenshots(camera, controls, renderer, scene) {
+    const originalPos = camera.position.clone();
+    const originalTarget = controls.target.clone();
+    const radius = originalPos.distanceTo(originalTarget);
+    const y = originalPos.y;
+    const positions = [
+        [0, y, radius],
+        [radius, y, 0],
+        [0, y, -radius],
+        [-radius, y, 0]
+    ];
+
+    const shots = [];
+    for (const pos of positions) {
+        camera.position.set(pos[0], pos[1], pos[2]);
+        camera.lookAt(originalTarget);
+        controls.update();
+        renderer.render(scene, camera);
+        await new Promise(r => setTimeout(r, 100));
+        shots.push(renderer.domElement.toDataURL('image/png'));
+    }
+
+    camera.position.copy(originalPos);
+    controls.target.copy(originalTarget);
+    controls.update();
+    return shots;
+}
+
 // --- Application State & Data ---
 const appData = {
     contact: {},
@@ -82,13 +111,13 @@ function setupFormSubmission() {
         submitButton.textContent = 'Отправка...';
 
         const formData = new FormData(DOMElements.tattooForm);
-        
+
         const selectedDateEl = DOMElements.calendarGrid.querySelector('.is-selected');
         const monthYear = document.querySelector('#schedule-section .calendar__header h3').textContent;
         const appointmentDate = selectedDateEl ? `${selectedDateEl.textContent} ${monthYear}` : 'Не выбрана';
         formData.append('appointmentDate', appointmentDate);
 
-        const bodySpacesText = appData.bodySpaces.map(space => 
+        const bodySpacesText = appData.bodySpaces.map(space =>
             `Часть тела: ${space.part}, Размер: ${space.size}${space.details ? ', Детали: ' + space.details : ''}`
         ).join('; \n');
         formData.append('bodySpaces', bodySpacesText || 'Не указано');
@@ -101,7 +130,7 @@ function setupFormSubmission() {
         }
 
         appData.tattooIdea.references.forEach((ref, index) => {
-        formData.append('references', ref.file, `reference_${index + 1}.jpg`);
+            formData.append('references', ref.file, `reference_${index + 1}.jpg`);
         });
 
         try {
@@ -114,7 +143,7 @@ function setupFormSubmission() {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Не удалось отправить форму.');
             }
-            
+
             showScreen('completed-section');
 
         } catch (error) {
@@ -191,7 +220,7 @@ function toggleTabs(show3d) {
 function setupFileUpload() {
     const { dropArea, fileInput, previewContainer } = DOMElements;
     if (!dropArea) return;
-    
+
     dropArea.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', e => handleFiles(e.target.files));
 
@@ -219,16 +248,16 @@ function setupFileUpload() {
 }
 
 function handleFiles(files) {
-    [...files].forEach(file => {
+    ([...files]).forEach(file => {
         if (!file.type.startsWith('image/') || DOMElements.previewContainer.children.length >= 5) return;
-        
+
         const fileData = {
             id: Date.now() + Math.random(),
             file: file
         };
         appData.tattooIdea.references.push(fileData);
         DOMElements.fileInput.value = '';
-        
+
         const reader = new FileReader();
         reader.onload = () => {
             DOMElements.previewContainer.innerHTML += `
@@ -265,7 +294,7 @@ function init3DScene() {
     const brushColor = new THREE.Color(0x7B2BFF);
     const tempVec = new THREE.Vector3();
     const prevColor = new THREE.Color();
-    
+
     const { clientWidth: W, clientHeight: H } = DOMElements.modelWrapper;
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xf0f0f0);
@@ -289,14 +318,14 @@ function init3DScene() {
     dl.position.set(5, 5, 5);
     scene.add(dl);
 
-    const uiElements = create3DUI(); 
+    const uiElements = create3DUI();
     DOMElements.modelWrapper.append(
-        uiElements.paintBtn, 
-        uiElements.readyBtn, 
-        uiElements.slider, 
-        uiElements.sliderLabel, 
-        uiElements.zoomControls, 
-        uiElements.hintIcons, 
+        uiElements.paintBtn,
+        uiElements.readyBtn,
+        uiElements.slider,
+        uiElements.sliderLabel,
+        uiElements.zoomControls,
+        uiElements.hintIcons,
         uiElements.genderBtn
     );
 
@@ -310,7 +339,8 @@ function init3DScene() {
     uiElements.readyBtn.addEventListener('click', async () => {
         try {
             uiElements.readyBtn.disabled = true;
-            await captureModelScreenshots();
+            const shots = await captureModelScreenshots(camera, controls, renderer, scene);
+            appData.tattooIdea.screenshots3D = shots;
             uiElements.readyBtn.classList.add('captured');
         } catch (err) {
             console.error('Screenshot error:', err);
@@ -331,7 +361,7 @@ function init3DScene() {
         camera.zoom /= zoomFactor;
         camera.updateProjectionMatrix();
     });
-    
+
     new GLTFLoader().load('man.glb', gltf => {
         const model = gltf.scene;
         model.traverse(obj => {
@@ -349,7 +379,7 @@ function init3DScene() {
         model.position.y = -16;
         scene.add(model);
     }, undefined, err => console.error('GLB loading error:', err));
-    
+
     function paint(e) {
         setMouse(e);
         raycaster.setFromCamera(mouse, camera);
@@ -364,7 +394,7 @@ function init3DScene() {
             tempVec.fromBufferAttribute(posAttr, i).applyMatrix4(hit.object.matrixWorld);
             const dist = tempVec.distanceTo(hit.point);
             if (dist > brushRadius) continue;
-            
+
             const weight = 1 - (dist / brushRadius) ** 2;
             prevColor.fromBufferAttribute(colorAttr, i);
             prevColor.lerp(brushColor, weight);
@@ -378,7 +408,7 @@ function init3DScene() {
         mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
         mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     }
-    
+
     renderer.domElement.addEventListener('pointerdown', e => {
         if (paintMode && e.button === 0) {
             isPainting = true;
@@ -389,13 +419,13 @@ function init3DScene() {
         if (isPainting && paintMode) paint(e);
     });
     window.addEventListener('pointerup', () => { isPainting = false; });
-    
+
     function animate() {
         requestAnimationFrame(animate);
         controls.update();
         renderer.render(scene, camera);
     }
-    
+
     function onResize() {
         const { clientWidth, clientHeight } = DOMElements.modelWrapper;
         renderer.setSize(clientWidth, clientHeight);
@@ -403,34 +433,6 @@ function init3DScene() {
         camera.updateProjectionMatrix();
     }
 
-    async function captureModelScreenshots() {
-        const originalPos = camera.position.clone();
-        const originalTarget = controls.target.clone();
-        const radius = originalPos.distanceTo(originalTarget);
-        const y = originalPos.y;
-        const positions = [
-            [0, y, radius],
-            [radius, y, 0],
-            [0, y, -radius],
-            [-radius, y, 0]
-        ];
-
-        const shots = [];
-        for (const pos of positions) {
-            camera.position.set(pos[0], pos[1], pos[2]);
-            camera.lookAt(originalTarget);
-            controls.update();
-            renderer.render(scene, camera);
-            await new Promise(r => setTimeout(r, 100));
-            shots.push(renderer.domElement.toDataURL('image/png'));
-        }
-
-        camera.position.copy(originalPos);
-        controls.target.copy(originalTarget);
-        controls.update();
-        appData.tattooIdea.screenshots3D = shots;
-    }
-    
     window.addEventListener('resize', onResize);
     animate();
 }
@@ -484,7 +486,7 @@ function create3DUI() {
     zoomIcon.className = 'hint-icon';
     zoomIcon.innerHTML = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 4C11.5817 4 8 7.58172 8 12V20C8 24.4183 11.5817 28 16 28C20.4183 28 24 24.4183 24 20V12C24 7.58172 20.4183 4 16 4Z" stroke="#333" stroke-width="1.5" fill="none"/><path d="M16 4V12" stroke="#333" stroke-width="1.5"/><path d="M16 4C11.5817 4 8 7.58172 8 12H16V4Z" fill="#90EE90"/><rect x="15" y="7" width="2" height="4" rx="1" stroke="#333" stroke-width="1.5" fill="white"/><path d="M32 12L32 20" stroke="#333" stroke-width="1.5" stroke-linecap="round"/><path d="M30 14L32 12L34 14" stroke="#333" stroke-width="1.5" stroke-linecap="round"/><path d="M30 18L32 20L34 18" stroke="#333" stroke-width="1.5" stroke-linecap="round"/></svg><span>Zoom</span>`;
     hintIcons.append(rotateIcon, zoomIcon);
-    
+
     // Gender Button
     const genderBtn = document.createElement('button');
     genderBtn.type = 'button';
@@ -492,6 +494,5 @@ function create3DUI() {
     genderBtn.className = 'gender-selector-btn';
     genderBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15.5 8.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z" stroke="#333" stroke-width="1.5"/><path d="M12 12v9m-2-2h4M17.5 4.5l-3-3m0 3l3-3" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Gender</span>`;
 
-    // ИСПРАВЛЕНИЕ: Возвращаем все элементы, включая genderBtn
     return { paintBtn, readyBtn, slider, sliderLabel, zoomControls, zoomInBtn, zoomOutBtn, hintIcons, genderBtn };
 }
