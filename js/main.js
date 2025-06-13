@@ -34,33 +34,22 @@ async function captureModelScreenshots(camera, controls, renderer, scene, mainPa
     const originalTarget = controls.target.clone();
     const originalZoom = camera.zoom;
 
-    // Fallback to default views if no paint data or main model
+    // Fallback if no paint data or main model
     if (!mainPaintedMesh || !mainPaintedMesh.isMesh || paintedVertices.size === 0) {
         console.warn("No painted areas found or mainPaintedMesh is not a Mesh. Capturing default views.");
         return await captureDefaultModelScreenshots(camera, controls, renderer, scene);
     }
 
     const posAttr = mainPaintedMesh.geometry.attributes.position;
-    const normalAttr = mainPaintedMesh.geometry.attributes.normal;
 
     const paintedWorldPositions = [];
-    const paintedWorldNormals = [];
-
     const tempVertex = new THREE.Vector3();
-    const tempNormal = new THREE.Vector3();
 
-    // Convert painted vertices and their normals to world coordinates
+    // Convert painted vertices to world coordinates
     for (const index of paintedVertices) {
         tempVertex.fromBufferAttribute(posAttr, index);
         tempVertex.applyMatrix4(mainPaintedMesh.matrixWorld);
         paintedWorldPositions.push(tempVertex.clone());
-
-        if (normalAttr) {
-            tempNormal.fromBufferAttribute(normalAttr, index);
-            // Apply mesh's normal matrix to transform normal to world space
-            tempNormal.applyNormalMatrix(mainPaintedMesh.normalMatrix).normalize();
-            paintedWorldNormals.push(tempNormal.clone());
-        }
     }
 
     if (paintedWorldPositions.length === 0) {
@@ -68,46 +57,35 @@ async function captureModelScreenshots(camera, controls, renderer, scene, mainPa
         return await captureDefaultModelScreenshots(camera, controls, renderer, scene);
     }
 
-    // 1. Calculate the Bounding Box for the painted area
+    // 1. Calculate the Bounding Box for ALL painted areas
     const bbox = new THREE.Box3().setFromPoints(paintedWorldPositions);
     const center = new THREE.Vector3();
     bbox.getCenter(center);
     const size = new THREE.Vector3();
     bbox.getSize(size);
 
-    // 2. Calculate optimal camera distance
+    // Calculate optimal camera distance to fit the entire painted bbox
     const maxDim = Math.max(size.x, size.y, size.z);
     const fov = camera.fov * (Math.PI / 180);
     let cameraDistance = maxDim / (2 * Math.tan(fov / 2));
-    cameraDistance *= 1.5; // Add some padding
+    cameraDistance *= 1.5; // Add some padding to ensure everything fits
 
     const shots = [];
 
-    // --- Determine camera orientation based on average normal ---
-    let avgNormal = new THREE.Vector3();
-    if (paintedWorldNormals.length > 0) {
-        for (const normal of paintedWorldNormals) {
-            avgNormal.add(normal);
-        }
-        avgNormal.normalize();
-    } else {
-        // Fallback if no normals are found
-        avgNormal = new THREE.Vector3(0, 0, 1); // Default to looking forward
-    }
-
-    // Define capture directions relative to the average normal
+    // Define capture directions relative to the center of the painted bbox
+    // These are general views around the model, ensuring all painted areas are covered.
     const viewDirections = [
-        avgNormal.clone(), // Main view
-        new THREE.Vector3().copy(avgNormal).applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 6),   // Slightly right
-        new THREE.Vector3().copy(avgNormal).applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 6),  // Slightly left
-        // To rotate around the average normal (e.g., top-down of painted area),
-        // we need an axis orthogonal to avgNormal and the world 'up' vector.
-        // This is simplified; for true "top-down" of a curved surface, it's more complex.
-        new THREE.Vector3().copy(avgNormal).applyAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 6), // Slightly above
+        new THREE.Vector3(0, 0, 1),  // Front view
+        new THREE.Vector3(1, 0, 0),  // Right view
+        new THREE.Vector3(0, 0, -1), // Back view
+        new THREE.Vector3(-1, 0, 0), // Left view
+        new THREE.Vector3(0, 1, 0),  // Top view
+        // new THREE.Vector3(0, -1, 0)  // Bottom view (optional, typically not needed for body)
     ];
 
 
     for (const dir of viewDirections) {
+        // Calculate camera position relative to the center of the painted bbox
         const cameraPos = center.clone().add(dir.normalize().multiplyScalar(cameraDistance));
 
         camera.position.copy(cameraPos);
@@ -116,7 +94,7 @@ async function captureModelScreenshots(camera, controls, renderer, scene, mainPa
         controls.update(); // Important to update controls after changing position and target
 
         renderer.render(scene, camera);
-        await new Promise(r => setTimeout(r, 100)); // Small delay for rendering
+        await new Promise(r => setTimeout(r, 100)); // Small delay for rendering to complete
         shots.push(renderer.domElement.toDataURL('image/png'));
     }
 
@@ -124,7 +102,7 @@ async function captureModelScreenshots(camera, controls, renderer, scene, mainPa
     camera.position.copy(originalPos);
     controls.target.copy(originalTarget);
     camera.zoom = originalZoom;
-    camera.updateProjectionMatrix();
+    camera.updateProjectionMatrix(); // Update projection matrix after changing zoom
     controls.update();
 
     return shots;
@@ -492,8 +470,9 @@ function init3DScene() {
         const model = gltf.scene;
         model.traverse(obj => {
             if (obj.isMesh) {
-                // Assign the first found mesh as the main one for painting
-                // You might need a more robust way to identify your main mesh
+                // Assign the first found mesh as the main one for painting.
+                // If your GLB has multiple meshes and you only want to paint specific ones,
+                // you might need a more robust way to identify your main mesh (e.g., by name).
                 if (!mainPaintedMesh) {
                     mainPaintedMesh = obj;
                 }
