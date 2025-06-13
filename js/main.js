@@ -93,11 +93,13 @@ function setupFormSubmission() {
         ).join('; \n');
         formData.append('bodySpaces', bodySpacesText || 'Не указано');
 
+sfw1ar-codex/add-screenshot-functionality-to-ready-button
         if (appData.tattooIdea.screenshots3D.length) {
             appData.tattooIdea.screenshots3D.forEach((dataUrl, idx) => {
                 const blob = dataURLtoBlob(dataUrl);
                 formData.append('screenshots', blob, `screenshot_${idx + 1}.png`);
             });
+main
         }
 
         appData.tattooIdea.references.forEach((ref, index) => {
@@ -306,6 +308,7 @@ function init3DScene() {
         uiElements.paintBtn.classList.toggle('active', paintMode);
     };
 
+sfw1ar-codex/add-screenshot-functionality-to-ready-button
     // Capture screenshots from several angles when the user is ready
     uiElements.readyBtn.addEventListener('click', async () => {
         try {
@@ -316,6 +319,7 @@ function init3DScene() {
             console.error('Screenshot error:', err);
         } finally {
             uiElements.readyBtn.disabled = false;
+main
         }
     });
 
