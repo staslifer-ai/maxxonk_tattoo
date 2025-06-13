@@ -4,12 +4,16 @@
 
 :root {
   /* Colors */
-  --primary-color: #000000;
-  --primary-color-dark: #000000;
+  --primary-color: #6c4cf1;
+  --primary-color-dark: #5840c1;
   --primary-color-light: #f5f3ff;
   --dark-color: #262626;
   --text-color: #333;
   --text-color-light: #666;
+  --border-color: #ddd;
+  --background-color: #ffffff;
+  --background-light-gray: #f3f3f3;
+  --background-gray: #e9e9e9;
 
   /* Typography */
   --font-family-main: 'Arial', sans-serif;
@@ -36,15 +40,23 @@
 }
 
 body {
-  font-family: var(--font-family-main);
-  /*background-color: var(--background-color);*/
-  /*background-image: url(../img/background.png);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0%,
+    #eeeeee 20%,
+    #cccccc 40%,
+    #999999 60%,
+    #666666 80%,
+    #444444 100%
+  );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   background-size: cover;
-  background-position: center;
-  background-attachment: fixed;*/
-  background: radial-gradient(circle at center, #f7f7f7 0%, #e0e0e0 100%);
-  color: var(--text-color);
-  padding: var(--spacing-base);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #111;
 }
 
 /* ==========================================================================
@@ -60,7 +72,7 @@ body {
 }
 
 .header__social-link {
-  font-size: 14px;
+  font-size: 17px;
   color: var(--text-color);
   text-decoration: none;
   display: flex;
@@ -97,12 +109,13 @@ body {
 }
 
 .btn--primary {
-  background-color: var(--primary-color);
-  color: var(--background-color);
+    background-color: #000;
+    color: #fff;
+    border: none;
 }
 
 .btn--primary:hover {
-  background-color: var(--primary-color-dark);
+    background-color: #222;
 }
 
 .btn--secondary {
@@ -147,13 +160,16 @@ body {
    4. Component: Forms & Cards
    ========================================================================== */
 .form-card {
-  background-color: var(--background-color);
-  border-radius: var(--border-radius-xl);
-  box-shadow: var(--shadow-medium);
-  max-width: 880px;
-  padding: 48px 60px;
-  width: 100%;
-  margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.6); /* чуть более прозрачный */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px); /* для Safari */
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    max-width: 880px;
+    padding: 48px 60px;
+    width: 100%;
+    margin: 0 auto;
+    transition: all 0.3s ease;
 }
 
 .form-card__header {
@@ -277,7 +293,7 @@ textarea {
   bottom: 5px;
   width: 100%;
   height: 3px;
-  background-color: var(--primary-color);
+  background-color: #000;
   border-radius: 2px;
 }
 
@@ -296,7 +312,7 @@ textarea {
 }
 .main-subtitle {
     font-size: 16px;
-    color: var(--text-color-light);
+    color: #181818;
     margin-bottom: 40px;
 }
 .section-title {
@@ -324,7 +340,7 @@ textarea {
 }
 .gallery__item img {
     width: 100%;
-    height: 180px;
+    height: 250px;
     object-fit: cover;
     display: block;
 }
