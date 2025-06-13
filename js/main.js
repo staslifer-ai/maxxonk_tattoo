@@ -17,7 +17,7 @@ function dataURLtoBlob(dataURL) {
 const appData = {
     contact: {},
     bodySpaces: [],
-    tattooIdea: { description: '', references: [], screenshot3D: null },
+    tattooIdea: { description: '', references: [], screenshots3D: [] },
     appointmentDate: ''
 };
 
@@ -93,9 +93,13 @@ function setupFormSubmission() {
         ).join('; \n');
         formData.append('bodySpaces', bodySpacesText || 'Не указано');
 
-        if (appData.tattooIdea.screenshot3D) {
-            const blob = dataURLtoBlob(appData.tattooIdea.screenshot3D);
-            formData.append('screenshot', blob, 'screenshot.png');
+sfw1ar-codex/add-screenshot-functionality-to-ready-button
+        if (appData.tattooIdea.screenshots3D.length) {
+            appData.tattooIdea.screenshots3D.forEach((dataUrl, idx) => {
+                const blob = dataURLtoBlob(dataUrl);
+                formData.append('screenshots', blob, `screenshot_${idx + 1}.png`);
+            });
+main
         }
 
         appData.tattooIdea.references.forEach((ref, index) => {
@@ -304,13 +308,18 @@ function init3DScene() {
         uiElements.paintBtn.classList.toggle('active', paintMode);
     };
 
-    // Capture screenshot when the user is satisfied
-    uiElements.readyBtn.addEventListener('click', () => {
+sfw1ar-codex/add-screenshot-functionality-to-ready-button
+    // Capture screenshots from several angles when the user is ready
+    uiElements.readyBtn.addEventListener('click', async () => {
         try {
-            appData.tattooIdea.screenshot3D = renderer.domElement.toDataURL('image/png');
+            uiElements.readyBtn.disabled = true;
+            await captureModelScreenshots();
             uiElements.readyBtn.classList.add('captured');
         } catch (err) {
             console.error('Screenshot error:', err);
+        } finally {
+            uiElements.readyBtn.disabled = false;
+main
         }
     });
 
@@ -396,6 +405,34 @@ function init3DScene() {
         renderer.setSize(clientWidth, clientHeight);
         camera.aspect = clientWidth / clientHeight;
         camera.updateProjectionMatrix();
+    }
+
+    async function captureModelScreenshots() {
+        const originalPos = camera.position.clone();
+        const originalTarget = controls.target.clone();
+        const radius = originalPos.distanceTo(originalTarget);
+        const y = originalPos.y;
+        const positions = [
+            [0, y, radius],
+            [radius, y, 0],
+            [0, y, -radius],
+            [-radius, y, 0]
+        ];
+
+        const shots = [];
+        for (const pos of positions) {
+            camera.position.set(pos[0], pos[1], pos[2]);
+            camera.lookAt(originalTarget);
+            controls.update();
+            renderer.render(scene, camera);
+            await new Promise(r => setTimeout(r, 100));
+            shots.push(renderer.domElement.toDataURL('image/png'));
+        }
+
+        camera.position.copy(originalPos);
+        controls.target.copy(originalTarget);
+        controls.update();
+        appData.tattooIdea.screenshots3D = shots;
     }
     
     window.addEventListener('resize', onResize);
