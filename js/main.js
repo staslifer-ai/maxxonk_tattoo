@@ -2,6 +2,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+/**
+ * Converts a data URL to a Blob object.
+ * @param {string} dataURL - The data URL to convert.
+ * @returns {Blob} The Blob object.
+ */
 function dataURLtoBlob(dataURL) {
     const [header, data] = dataURL.split(',');
     const mime = header.match(/:(.*?);/)[1];
@@ -13,17 +18,136 @@ function dataURLtoBlob(dataURL) {
     return new Blob([array], { type: mime });
 }
 
-// Перемещено сюда как единое определение
-async function captureModelScreenshots(camera, controls, renderer, scene) {
+/**
+ * Captures screenshots of the 3D model, focusing on painted areas if available,
+ * otherwise captures default views.
+ * @param {THREE.PerspectiveCamera} camera - The camera used for rendering.
+ * @param {OrbitControls} controls - The OrbitControls instance.
+ * @param {THREE.WebGLRenderer} renderer - The WebGLRenderer instance.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @param {THREE.Mesh | THREE.Object3D} mainPaintedMesh - The main mesh or object being painted.
+ * @param {Set<number>} paintedVertices - A Set of vertex indices that have been painted.
+ * @returns {Promise<string[]>} An array of data URLs for the captured screenshots.
+ */
+async function captureModelScreenshots(camera, controls, renderer, scene, mainPaintedMesh, paintedVertices) {
+    const originalPos = camera.position.clone();
+    const originalTarget = controls.target.clone();
+    const originalZoom = camera.zoom;
+
+    // Fallback to default views if no paint data or main model
+    if (!mainPaintedMesh || !mainPaintedMesh.isMesh || paintedVertices.size === 0) {
+        console.warn("No painted areas found or mainPaintedMesh is not a Mesh. Capturing default views.");
+        return await captureDefaultModelScreenshots(camera, controls, renderer, scene);
+    }
+
+    const posAttr = mainPaintedMesh.geometry.attributes.position;
+    const normalAttr = mainPaintedMesh.geometry.attributes.normal;
+
+    const paintedWorldPositions = [];
+    const paintedWorldNormals = [];
+
+    const tempVertex = new THREE.Vector3();
+    const tempNormal = new THREE.Vector3();
+
+    // Convert painted vertices and their normals to world coordinates
+    for (const index of paintedVertices) {
+        tempVertex.fromBufferAttribute(posAttr, index);
+        tempVertex.applyMatrix4(mainPaintedMesh.matrixWorld);
+        paintedWorldPositions.push(tempVertex.clone());
+
+        if (normalAttr) {
+            tempNormal.fromBufferAttribute(normalAttr, index);
+            // Apply mesh's normal matrix to transform normal to world space
+            tempNormal.applyNormalMatrix(mainPaintedMesh.normalMatrix).normalize();
+            paintedWorldNormals.push(tempNormal.clone());
+        }
+    }
+
+    if (paintedWorldPositions.length === 0) {
+        console.warn("No painted world positions found. Capturing default views.");
+        return await captureDefaultModelScreenshots(camera, controls, renderer, scene);
+    }
+
+    // 1. Calculate the Bounding Box for the painted area
+    const bbox = new THREE.Box3().setFromPoints(paintedWorldPositions);
+    const center = new THREE.Vector3();
+    bbox.getCenter(center);
+    const size = new THREE.Vector3();
+    bbox.getSize(size);
+
+    // 2. Calculate optimal camera distance
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fov = camera.fov * (Math.PI / 180);
+    let cameraDistance = maxDim / (2 * Math.tan(fov / 2));
+    cameraDistance *= 1.5; // Add some padding
+
+    const shots = [];
+
+    // --- Determine camera orientation based on average normal ---
+    let avgNormal = new THREE.Vector3();
+    if (paintedWorldNormals.length > 0) {
+        for (const normal of paintedWorldNormals) {
+            avgNormal.add(normal);
+        }
+        avgNormal.normalize();
+    } else {
+        // Fallback if no normals are found
+        avgNormal = new THREE.Vector3(0, 0, 1); // Default to looking forward
+    }
+
+    // Define capture directions relative to the average normal
+    const viewDirections = [
+        avgNormal.clone(), // Main view
+        new THREE.Vector3().copy(avgNormal).applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 6),   // Slightly right
+        new THREE.Vector3().copy(avgNormal).applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 6),  // Slightly left
+        // To rotate around the average normal (e.g., top-down of painted area),
+        // we need an axis orthogonal to avgNormal and the world 'up' vector.
+        // This is simplified; for true "top-down" of a curved surface, it's more complex.
+        new THREE.Vector3().copy(avgNormal).applyAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 6), // Slightly above
+    ];
+
+
+    for (const dir of viewDirections) {
+        const cameraPos = center.clone().add(dir.normalize().multiplyScalar(cameraDistance));
+
+        camera.position.copy(cameraPos);
+        camera.lookAt(center); // Camera looks at the center of the painted area
+        controls.target.copy(center); // Update OrbitControls target
+        controls.update(); // Important to update controls after changing position and target
+
+        renderer.render(scene, camera);
+        await new Promise(r => setTimeout(r, 100)); // Small delay for rendering
+        shots.push(renderer.domElement.toDataURL('image/png'));
+    }
+
+    // Restore camera and controls to original position
+    camera.position.copy(originalPos);
+    controls.target.copy(originalTarget);
+    camera.zoom = originalZoom;
+    camera.updateProjectionMatrix();
+    controls.update();
+
+    return shots;
+}
+
+/**
+ * Captures screenshots from default fixed angles. Used as a fallback.
+ * @param {THREE.PerspectiveCamera} camera - The camera used for rendering.
+ * @param {OrbitControls} controls - The OrbitControls instance.
+ * @param {THREE.WebGLRenderer} renderer - The WebGLRenderer instance.
+ * @param {THREE.Scene} scene - The Three.js scene.
+ * @returns {Promise<string[]>} An array of data URLs for the captured screenshots.
+ */
+async function captureDefaultModelScreenshots(camera, controls, renderer, scene) {
     const originalPos = camera.position.clone();
     const originalTarget = controls.target.clone();
     const radius = originalPos.distanceTo(originalTarget);
-    const y = originalPos.y;
+    const y = originalPos.y; // Keep current Y level for default shots
     const positions = [
-        [0, y, radius],
-        [radius, y, 0],
-        [0, y, -radius],
-        [-radius, y, 0]
+        [0, y, radius],     // Front
+        [radius, y, 0],     // Right
+        [0, y, -radius],    // Back
+        [-radius, y, 0]     // Left
     ];
 
     const shots = [];
@@ -32,7 +156,7 @@ async function captureModelScreenshots(camera, controls, renderer, scene) {
         camera.lookAt(originalTarget);
         controls.update();
         renderer.render(scene, camera);
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 100)); // Small delay
         shots.push(renderer.domElement.toDataURL('image/png'));
     }
 
@@ -287,6 +411,8 @@ function init3DScene() {
     let renderer, scene, camera, controls, brushRadius;
     let paintMode = false;
     let isPainting = false;
+    let paintedVertices = new Set(); // Stores indices of painted vertices for the main mesh
+    let mainPaintedMesh = null; // Reference to the actual mesh being painted
 
     const mapRadius = v => THREE.MathUtils.mapLinear(+v, 5, 40, 0.03, 0.12);
     const raycaster = new THREE.Raycaster();
@@ -300,10 +426,9 @@ function init3DScene() {
     scene.background = new THREE.Color(0xf0f0f0);
     camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 1000);
     camera.position.set(0, 1.5, 8);
-    // Preserve the drawing buffer so screenshots contain the rendered model
     renderer = new THREE.WebGLRenderer({
         antialias: true,
-        preserveDrawingBuffer: true
+        preserveDrawingBuffer: true // Crucial for toDataURL
     });
     renderer.setSize(W, H);
     DOMElements.modelWrapper.appendChild(renderer.domElement);
@@ -331,7 +456,7 @@ function init3DScene() {
 
     uiElements.paintBtn.onclick = () => {
         paintMode = !paintMode;
-        controls.enabled = !paintMode;
+        controls.enabled = !paintMode; // Disable orbit controls when in paint mode
         uiElements.paintBtn.classList.toggle('active', paintMode);
     };
 
@@ -339,7 +464,8 @@ function init3DScene() {
     uiElements.readyBtn.addEventListener('click', async () => {
         try {
             uiElements.readyBtn.disabled = true;
-            const shots = await captureModelScreenshots(camera, controls, renderer, scene);
+            // Pass the mainPaintedMesh and the Set of painted vertices
+            const shots = await captureModelScreenshots(camera, controls, renderer, scene, mainPaintedMesh, paintedVertices);
             appData.tattooIdea.screenshots3D = shots;
             uiElements.readyBtn.classList.add('captured');
         } catch (err) {
@@ -366,41 +492,54 @@ function init3DScene() {
         const model = gltf.scene;
         model.traverse(obj => {
             if (obj.isMesh) {
+                // Assign the first found mesh as the main one for painting
+                // You might need a more robust way to identify your main mesh
+                if (!mainPaintedMesh) {
+                    mainPaintedMesh = obj;
+                }
+
                 const g = obj.geometry;
                 if (!g.hasAttribute('color')) {
                     const colors = new Float32Array(g.attributes.position.count * 3);
-                    colors.fill(1);
+                    colors.fill(1); // Default to white
                     g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
                 }
                 obj.material = obj.material.clone();
                 obj.material.vertexColors = true;
             }
         });
-        model.position.y = -16;
+        model.position.y = -16; // Adjust model position if needed
         scene.add(model);
     }, undefined, err => console.error('GLB loading error:', err));
+
 
     function paint(e) {
         setMouse(e);
         raycaster.setFromCamera(mouse, camera);
         const hit = raycaster.intersectObjects(scene.children, true)[0];
-        if (!hit) return;
+
+        // Ensure we hit a mesh, and specifically our main painted mesh
+        if (!hit || !hit.object.isMesh || hit.object !== mainPaintedMesh) return;
 
         const g = hit.object.geometry;
         const posAttr = g.attributes.position;
         const colorAttr = g.attributes.color;
 
         for (let i = 0; i < posAttr.count; i++) {
+            // Transform vertex position to world coordinates for distance calculation
             tempVec.fromBufferAttribute(posAttr, i).applyMatrix4(hit.object.matrixWorld);
             const dist = tempVec.distanceTo(hit.point);
             if (dist > brushRadius) continue;
 
-            const weight = 1 - (dist / brushRadius) ** 2;
+            const weight = 1 - (dist / brushRadius) ** 2; // Stronger in center, fades out
             prevColor.fromBufferAttribute(colorAttr, i);
-            prevColor.lerp(brushColor, weight);
+            prevColor.lerp(brushColor, weight); // Blend colors
             colorAttr.setXYZ(i, prevColor.r, prevColor.g, prevColor.b);
+
+            // Add the vertex index to the set of painted vertices
+            paintedVertices.add(i);
         }
-        colorAttr.needsUpdate = true;
+        colorAttr.needsUpdate = true; // Tell Three.js to re-upload color data to GPU
     }
 
     function setMouse(e) {
@@ -410,7 +549,7 @@ function init3DScene() {
     }
 
     renderer.domElement.addEventListener('pointerdown', e => {
-        if (paintMode && e.button === 0) {
+        if (paintMode && e.button === 0) { // Left click
             isPainting = true;
             paint(e);
         }
@@ -428,15 +567,20 @@ function init3DScene() {
 
     function onResize() {
         const { clientWidth, clientHeight } = DOMElements.modelWrapper;
+        if (clientWidth === 0 || clientHeight === 0) return; // Prevent division by zero
         renderer.setSize(clientWidth, clientHeight);
         camera.aspect = clientWidth / clientHeight;
         camera.updateProjectionMatrix();
     }
 
     window.addEventListener('resize', onResize);
-    animate();
+    animate(); // Start the animation loop
 }
 
+/**
+ * Creates and returns the UI elements for the 3D viewer.
+ * @returns {Object} An object containing references to the created UI elements.
+ */
 function create3DUI() {
     // Paint Button
     const paintBtn = document.createElement('button');
