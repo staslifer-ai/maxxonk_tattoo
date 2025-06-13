@@ -13,6 +13,34 @@ function dataURLtoBlob(dataURL) {
     return new Blob([array], { type: mime });
 }
 
+async function captureModelScreenshots(camera, controls, renderer, scene) {
+    const originalPos = camera.position.clone();
+    const originalTarget = controls.target.clone();
+    const radius = originalPos.distanceTo(originalTarget);
+    const y = originalPos.y;
+    const positions = [
+        [0, y, radius],
+        [radius, y, 0],
+        [0, y, -radius],
+        [-radius, y, 0]
+    ];
+
+    const shots = [];
+    for (const pos of positions) {
+        camera.position.set(pos[0], pos[1], pos[2]);
+        camera.lookAt(originalTarget);
+        controls.update();
+        renderer.render(scene, camera);
+        await new Promise(r => setTimeout(r, 100));
+        shots.push(renderer.domElement.toDataURL('image/png'));
+    }
+
+    camera.position.copy(originalPos);
+    controls.target.copy(originalTarget);
+    controls.update();
+    return shots;
+}
+
 // --- Application State & Data ---
 const appData = {
     contact: {},
@@ -286,7 +314,8 @@ function init3DScene() {
     controls.target.set(0, 1.5, 0);
     controls.update();
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const shots = await captureModelScreenshots(camera, controls, renderer, scene);
+            appData.tattooIdea.screenshots3D = shots;
     const dl = new THREE.DirectionalLight(0xffffff, 0.8);
     dl.position.set(5, 5, 5);
     scene.add(dl);
@@ -378,33 +407,6 @@ main
     }
 
     function setMouse(e) {
-        const rect = renderer.domElement.getBoundingClientRect();
-        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    }
-    
-    renderer.domElement.addEventListener('pointerdown', e => {
-        if (paintMode && e.button === 0) {
-            isPainting = true;
-            paint(e);
-        }
-    });
-    renderer.domElement.addEventListener('pointermove', e => {
-        if (isPainting && paintMode) paint(e);
-    });
-    window.addEventListener('pointerup', () => { isPainting = false; });
-    
-    function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-    }
-    
-    function onResize() {
-        const { clientWidth, clientHeight } = DOMElements.modelWrapper;
-        renderer.setSize(clientWidth, clientHeight);
-        camera.aspect = clientWidth / clientHeight;
-        camera.updateProjectionMatrix();
     }
 
     async function captureModelScreenshots() {
