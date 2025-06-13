@@ -2,6 +2,17 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+function dataURLtoBlob(dataURL) {
+    const [header, data] = dataURL.split(',');
+    const mime = header.match(/:(.*?);/)[1];
+    const binary = atob(data);
+    const array = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        array[i] = binary.charCodeAt(i);
+    }
+    return new Blob([array], { type: mime });
+}
+
 // --- Application State & Data ---
 const appData = {
     contact: {},
@@ -81,7 +92,12 @@ function setupFormSubmission() {
             `Часть тела: ${space.part}, Размер: ${space.size}${space.details ? ', Детали: ' + space.details : ''}`
         ).join('; \n');
         formData.append('bodySpaces', bodySpacesText || 'Не указано');
-        
+
+        if (appData.tattooIdea.screenshot3D) {
+            const blob = dataURLtoBlob(appData.tattooIdea.screenshot3D);
+            formData.append('screenshot', blob, 'screenshot.png');
+        }
+
         appData.tattooIdea.references.forEach((ref, index) => {
         formData.append('references', ref.file, `reference_${index + 1}.jpg`);
         });
@@ -283,6 +299,16 @@ function init3DScene() {
         controls.enabled = !paintMode;
         uiElements.paintBtn.classList.toggle('active', paintMode);
     };
+
+    // Capture screenshot when the user is satisfied
+    uiElements.readyBtn.addEventListener('click', () => {
+        try {
+            appData.tattooIdea.screenshot3D = renderer.domElement.toDataURL('image/png');
+            uiElements.readyBtn.classList.add('captured');
+        } catch (err) {
+            console.error('Screenshot error:', err);
+        }
+    });
 
     uiElements.slider.oninput = () => { brushRadius = mapRadius(uiElements.slider.value); };
     brushRadius = mapRadius(uiElements.slider.value);
