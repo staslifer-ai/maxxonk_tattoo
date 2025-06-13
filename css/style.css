@@ -41,7 +41,8 @@
 
 body {
   font-family: var(--font-family-main);
-  background-color: var(--background-color);
+  /*background-color: var(--background-color);*/
+  background-image: url(background.png);
   color: var(--text-color);
   padding: var(--spacing-base);
 }
