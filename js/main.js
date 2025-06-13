@@ -212,6 +212,7 @@ function handleFiles(files) {
             file: file
         };
         appData.tattooIdea.references.push(fileData);
+        DOMElements.fileInput.value = '';
         
         const reader = new FileReader();
         reader.onload = () => {
