@@ -85,6 +85,10 @@ function setupFormSubmission() {
         ).join('; \n');
         formData.append('bodySpaces', bodySpacesText || 'Не указано');
         
+        appData.tattooIdea.references.forEach((ref, index) => {
+        formData.append('references', ref.file, `reference_${index + 1}.jpg`);
+        });
+
         try {
             const response = await fetch('/.netlify/functions/sendForm', {
                 method: 'POST',
