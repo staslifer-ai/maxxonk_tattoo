@@ -269,7 +269,11 @@ function init3DScene() {
     scene.background = new THREE.Color(0xf0f0f0);
     camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 1000);
     camera.position.set(0, 1.5, 8);
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Preserve the drawing buffer so screenshots contain the rendered model
+    renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        preserveDrawingBuffer: true
+    });
     renderer.setSize(W, H);
     DOMElements.modelWrapper.appendChild(renderer.domElement);
 
