@@ -43,7 +43,6 @@ body {
   font-family: var(--font-family-main);
   /*background-color: var(--background-color);*/
   background-image: url(../img/background.png);
-  background-size: cover;
   background-position: center;
   background-attachment: fixed;
   color: var(--text-color);
