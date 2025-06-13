@@ -2,11 +2,22 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+function dataURLtoBlob(dataURL) {
+    const [header, data] = dataURL.split(',');
+    const mime = header.match(/:(.*?);/)[1];
+    const binary = atob(data);
+    const array = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        array[i] = binary.charCodeAt(i);
+    }
+    return new Blob([array], { type: mime });
+}
+
 // --- Application State & Data ---
 const appData = {
     contact: {},
     bodySpaces: [],
-    tattooIdea: { description: '', references: [], screenshot3D: null },
+    tattooIdea: { description: '', references: [], screenshots3D: [] },
     appointmentDate: ''
 };
 
@@ -81,7 +92,14 @@ function setupFormSubmission() {
             `Часть тела: ${space.part}, Размер: ${space.size}${space.details ? ', Детали: ' + space.details : ''}`
         ).join('; \n');
         formData.append('bodySpaces', bodySpacesText || 'Не указано');
-        
+
+        if (appData.tattooIdea.screenshots3D.length) {
+            appData.tattooIdea.screenshots3D.forEach((dataUrl, idx) => {
+                const blob = dataURLtoBlob(dataUrl);
+                formData.append('screenshots', blob, `screenshot_${idx + 1}.png`);
+            });
+        }
+
         appData.tattooIdea.references.forEach((ref, index) => {
         formData.append('references', ref.file, `reference_${index + 1}.jpg`);
         });
@@ -253,7 +271,11 @@ function init3DScene() {
     scene.background = new THREE.Color(0xf0f0f0);
     camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 1000);
     camera.position.set(0, 1.5, 8);
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Preserve the drawing buffer so screenshots contain the rendered model
+    renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        preserveDrawingBuffer: true
+    });
     renderer.setSize(W, H);
     DOMElements.modelWrapper.appendChild(renderer.domElement);
 
@@ -283,6 +305,19 @@ function init3DScene() {
         controls.enabled = !paintMode;
         uiElements.paintBtn.classList.toggle('active', paintMode);
     };
+
+    // Capture screenshots from several angles when the user is ready
+    uiElements.readyBtn.addEventListener('click', async () => {
+        try {
+            uiElements.readyBtn.disabled = true;
+            await captureModelScreenshots();
+            uiElements.readyBtn.classList.add('captured');
+        } catch (err) {
+            console.error('Screenshot error:', err);
+        } finally {
+            uiElements.readyBtn.disabled = false;
+        }
+    });
 
     uiElements.slider.oninput = () => { brushRadius = mapRadius(uiElements.slider.value); };
     brushRadius = mapRadius(uiElements.slider.value);
@@ -366,6 +401,34 @@ function init3DScene() {
         renderer.setSize(clientWidth, clientHeight);
         camera.aspect = clientWidth / clientHeight;
         camera.updateProjectionMatrix();
+    }
+
+    async function captureModelScreenshots() {
+        const originalPos = camera.position.clone();
+        const originalTarget = controls.target.clone();
+        const radius = originalPos.distanceTo(originalTarget);
+        const y = originalPos.y;
+        const positions = [
+            [0, y, radius],
+            [radius, y, 0],
+            [0, y, -radius],
+            [-radius, y, 0]
+        ];
+
+        const shots = [];
+        for (const pos of positions) {
+            camera.position.set(pos[0], pos[1], pos[2]);
+            camera.lookAt(originalTarget);
+            controls.update();
+            renderer.render(scene, camera);
+            await new Promise(r => setTimeout(r, 100));
+            shots.push(renderer.domElement.toDataURL('image/png'));
+        }
+
+        camera.position.copy(originalPos);
+        controls.target.copy(originalTarget);
+        controls.update();
+        appData.tattooIdea.screenshots3D = shots;
     }
     
     window.addEventListener('resize', onResize);
