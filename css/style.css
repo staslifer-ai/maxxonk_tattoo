@@ -45,6 +45,7 @@ body {
   background-image: url(../img/background.png);
   background-size: cover;
   background-position: center;
+  background-attachment: fixed;
   color: var(--text-color);
   padding: var(--spacing-base);
 }
