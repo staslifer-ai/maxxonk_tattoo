@@ -94,6 +94,10 @@ body {
   display: block;
 }
 
+.hidden {
+    display: none !important;
+}
+
 /* ==========================================================================
    3. Component: Buttons
    ========================================================================== */
@@ -301,15 +305,6 @@ textarea {
   border-radius: 2px;
 }
 
-.step-indicator {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-
 /* ==========================================================================
    6. Screen Specific Styles
    ========================================================================== */
@@ -357,13 +352,6 @@ textarea {
     object-fit: cover;
     display: block;
 }
-.gallery__caption {
-    background-color: rgba(0,0,0,0.8);
-    color: white;
-    font-size: 14px;
-    padding: 8px;
-    text-align: center;
-}
 
 /* --- Body Selector Screen --- */
 .tabs {
@@ -392,130 +380,181 @@ textarea {
     flex-direction: column;
     gap: 18px;
 }
-.cards-container {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-top: 24px;
-}
-.card {
-    border: 1px solid var(--primary-color);
-    border-radius: var(--border-radius-l);
-    padding: 15px;
-    background: var(--primary-color-light);
-    box-shadow: 0 2px 8px rgba(108,76,241,0.08);
-    position: relative;
-    font-size: 14px;
-    line-height: 1.5;
-}
-.card__close-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: none;
-    border: none;
-    font-size: 22px;
-    line-height: 1;
-    color: var(--primary-color);
-    cursor: pointer;
-    padding: 2px;
-}
 
 /* --- 3D Model Viewer --- */
 .model-wrapper {
     position: relative;
     display: none;
     width: 100%;
-    height: 420px;
+    height: 420px; /* Высота контейнера для модели */
     background: var(--background-light-gray);
     border-radius: var(--border-radius-m);
     overflow: hidden;
     margin: 24px 0;
 }
-
-/* --- 3D UI Controls --- */
-.model-ui-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 14px;
-    font: 600 13px/1 var(--font-family-main);
-    border-radius: var(--border-radius-pill);
-    cursor: pointer;
-    user-select: none;
-    transition: background .18s, color .18s, opacity .18s;
-    border: 2px solid #000;
-    position: absolute;
-    bottom: 12px;
+.model-wrapper canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
 }
-.model-ui-btn svg {
-    width: 14px;
-    height: 14px;
+
+/* ==========================================================================
+   7. NEW 3D MODEL UI CONTROLS
+   ========================================================================== */
+
+/* Главный контейнер для UI, который лежит поверх Canvas */
+.controls-ui {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Позволяет кликам "проходить" сквозь контейнер на модель */
     pointer-events: none;
 }
-.model-ui-btn:hover {
-    opacity: .85;
-}
-#paint-btn {
-    right: 12px;
-    background: #fff;
-    color: #000;
-}
-#paint-btn.active {
-    background: #000;
-    color: #fff;
-}
-#ready-btn {
-    right: 112px;
-    background: #000;
-    color: #fff;
-}
-#ready-btn.captured {
-    background: #48b348;
-}
-.brush-slider {
-    -webkit-appearance: none;
-    appearance: none;
+
+/* Общие стили для верхней и нижней панели */
+.top-bar, .bottom-bar {
     position: absolute;
-    top: 50%;
-    right: 16px;
-    transform: translateY(-50%);
-    height: 180px;
-    width: 6px;
-    background: var(--background-gray);
-    border-radius: 3px;
-    cursor: pointer;
-    -webkit-appearance: slider-vertical;
-    writing-mode: bt-lr; /* Fix for Safari */
+    width: 100%;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    /* Возвращаем кликабельность для самих панелей и их содержимого */
+    pointer-events: auto;
 }
-.brush-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 6px;
-    height: 34px;
-    background: #000;
-    border-radius: 3px;
-    cursor: pointer;
+
+.top-bar {
+    top: 0;
+    justify-content: flex-start; /* Кнопки будут слева */
 }
-.brush-slider::-moz-range-thumb {
-    width: 6px;
-    height: 34px;
-    background: #000;
+
+.bottom-bar {
+    bottom: 0;
+    justify-content: center; /* Центральная кнопка по центру */
+    gap: 15px;
+}
+
+/* -- Компоненты верхней панели -- */
+.gender-toggle {
+    display: flex;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(5px);
+    border-radius: var(--border-radius-pill);
+    box-shadow: var(--shadow-light);
+}
+
+.gender-toggle button {
+    background-color: transparent;
     border: none;
-    border-radius: 3px;
+    padding: 10px 15px;
+    font-size: 18px;
+    color: var(--text-color-light);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.gender-toggle button:hover {
+    color: var(--text-color);
+}
+
+.gender-toggle button.active {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+/* -- Компоненты нижней панели -- */
+#mode-toggle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--dark-color);
+    color: var(--background-color);
+    border: none;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-medium);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+#mode-toggle:hover {
+    transform: scale(1.1);
+}
+
+.drawing-tools {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(5px);
+    padding: 8px 15px;
+    border-radius: var(--border-radius-pill);
+    box-shadow: var(--shadow-light);
+}
+
+.brush-size {
+    position: relative; /* Для позиционирования слайдера */
+    display: flex;
+    align-items: center;
+}
+
+#brush-size-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    font-size: 18px;
     cursor: pointer;
 }
-.brush-label {
+
+#brush-slider {
     position: absolute;
-    right: 12px;
-    top: calc(50% + 96px);
-    transform: translateY(-50%);
-    font-size: 12px;
-    line-height: 1;
-    text-align: center;
-    width: 40px;
-    color: #000;
+    bottom: calc(100% + 10px); /* Появляется над кнопкой */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    margin: 0;
 }
+
+/* Стилизация слайдера */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  background: var(--background-gray);
+  height: 6px;
+  border-radius: 3px;
+}
+input[type="range"]::-moz-range-track {
+  background: var(--background-gray);
+  height: 6px;
+  border-radius: 3px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -5px; /* (track_height - thumb_height) / 2 */
+  background-color: var(--dark-color);
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+}
+input[type="range"]::-moz-range-thumb {
+  border: none;
+  background-color: var(--dark-color);
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+}
+
 
 /* --- Tattoo Idea Screen (File Upload) --- */
 .file-drop-area {
@@ -625,23 +664,23 @@ textarea {
     color: #ccc;
     cursor: default;
 }
+
+/* --- Info Box & Completed Screen --- */
 .info-box {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-start;
+    gap: 12px;
     background-color: var(--primary-color-light);
     border-radius: var(--border-radius-m);
-    padding: 12px;
+    padding: 15px;
     margin-top: 30px;
-    font-size: 13px;
-    color: #555;
 }
 .info-box__icon {
     background-color: var(--primary-color);
     color: white;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -649,8 +688,12 @@ textarea {
     font-weight: bold;
     flex-shrink: 0;
 }
-
-/* --- Completed Screen --- */
+.info-box p {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.5;
+    margin: 0;
+}
 #completed-section .form-card {
     text-align: center;
 }
@@ -678,7 +721,7 @@ textarea {
 }
 
 /* ==========================================================================
-   7. Media Queries (Responsiveness)
+   8. Media Queries (Responsiveness)
    ========================================================================== */
 
 @media (max-width: 768px) {
@@ -691,6 +734,10 @@ textarea {
     }
     .step-nav li {
         font-size: 12px;
+    }
+    /* Делаем панели управления компактнее на мобильных */
+    .top-bar, .bottom-bar {
+        padding: 10px;
     }
 }
 
@@ -706,127 +753,21 @@ textarea {
         width: 100%;
     }
 }
-.zoom-controls {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px; /* Расстояние между кнопками */
-    z-index: 10; /* Чтобы были поверх других элементов */
-}
-
-.zoom-btn {
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    border: 2px solid var(--dark-color);
-    background-color: var(--background-color);
-    color: var(--dark-color);
-    border-radius: 50%; /* Делаем кнопки круглыми */
-    font-size: 24px;
-    font-weight: bold;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.zoom-btn:hover {
-    background-color: #f0f0f0; /* Легкий фон при наведении */
-}
-.info-box {
-    display: flex;
-    /* align-items: center; если текст многострочный, лучше выровнять по верху */
-    align-items: flex-start;
-    gap: 12px;
-    background-color: var(--primary-color-light); /* Светло-фиолетовый фон */
-    border-radius: var(--border-radius-m);
-    padding: 15px;
-    margin-top: 30px; /* Отступ сверху от 3D-модели */
-}
-
-.info-box__icon {
-    background-color: var(--primary-color); /* Основной фиолетовый цвет */
-    color: white;
+/* -- Стили для кнопок в панели инструментов -- */
+.tool-btn {
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    width: 22px;
-    height: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-style: normal;
-    font-weight: bold;
-    flex-shrink: 0; /* Запрещаем иконке сжиматься */
-}
-
-.info-box p {
-    font-size: 13px;
-    color: #555;
-    line-height: 1.5;
-    margin: 0; /* Убираем лишние отступы у параграфа */
-}
-.hint-icons {
-    position: absolute;
-    bottom: 20px;
-    left: 80px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.hint-icon {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    color: var(--text-color-light);
-    font-size: 12px;
-}
-
-.hint-icon svg {
-    width: 100px;  /* Исправляем размер - было 100px */
-    height: 100px;
-}
-
-/* Стили для кнопки смены пола - выносим отдельно */
-.gender-selector-btn {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 10;
-
-    width: 70px;
-    height: 70px;
-    background-color: #ffffff;
-    border: 1px solid #ddd;
-    border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    font-size: 18px;
     cursor: pointer;
-    transition: background-color 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1; /* Для лучшего выравнивания иконки-эмодзи */
 }
 
-.gender-selector-btn:hover {
-    background-color: #f5f5f5;
-    border-color: #ccc;
-}
-
-.gender-selector-btn svg {
-    width: 28px;
-    height: 28px;
-    margin-bottom: 4px;
-}
-
-.gender-selector-btn span {
-    font-size: 12px;
-    font-weight: 600;
-    color: #333;
-}
+/* Теперь стили для #brush-size-btn применяются через общий класс .tool-btn, 
+   поэтому старое правило для #brush-size-btn можно удалить, если оно есть.
+*/
