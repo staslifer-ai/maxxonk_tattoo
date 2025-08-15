@@ -72,7 +72,7 @@
                     <input type="text" id="phone" name="phone" placeholder="Your Phone">
                 </div>
                 <div class="form-card__group">
-                    <label for="additional">Additional data <span class="tooltip" title="Any additional notes about your request">🛈</span></label>
+                    <label for="additional">Additional data</label>
                     <textarea id="additional" name="additional" placeholder="Additional Information"></textarea>
                 </div>
                 <div class="form-card__actions">
@@ -84,7 +84,7 @@
 
         <section id="body-selector-section" class="step-section">
             <nav class="step-nav">
-                 <ul>
+                <ul>
                     <li class="completed">Tattoo Request</li>
                     <li class="active">Body Selector</li>
                     <li>Tattoo Idea</li>
@@ -101,49 +101,70 @@
                     <button type="button" class="tabs__btn is-active" id="tab-manual">Manual entry</button>
                 </div>
                 
-                <div id="model-wrapper" class="model-wrapper"></div>
+                <div id="model-wrapper" class="model-wrapper">
+                    <div class="controls-ui">
+                        <div class="top-bar">
+                            <div class="gender-toggle">
+                                <button type="button" id="male-btn" class="active">♂</button>
+                                <button type="button" id="female-btn">♀</button>
+                            </div>
+                        </div>
+
+                        <div class="bottom-bar">
+                            <div class="drawing-tools hidden">
+                                <button type="button" id="undo-btn" class="tool-btn">↩️</button> 
+                                <div class="brush-size">
+                                    <button type="button" id="brush-size-btn" class="tool-btn">●</button>
+                                    <input type="range" id="brush-slider" min="1" max="100" value="10" class="hidden">
+                                </div>
+                            </div>
+                            <button type="button" id="mode-toggle" data-mode="navigate">🖐️</button>
+                        </div>
+                    </div>
+                </div>
                 
-                <div id="manual-form"> <div class="form-card__group">
+                <div id="manual-form">
+                    <div class="form-card__group">
                         <label for="body-part">Body part</label>
                         <select id="body-part" name="body-part-selector" class="form-card__input">
-    <option disabled selected value="">Select Body Part</option>
-    <optgroup label="Arms">
-        <option>Forearm</option>
-        <option>Upper Arm</option>
-        <option>Elbow</option>
-        <option>Hand</option>
-        <option>Fingers</option>
-    </optgroup>
-    <optgroup label="Legs">
-        <option>Thigh</option>
-        <option>Calf</option>
-        <option>Knee</option>
-        <option>Ankle</option>
-        <option>Foot</option>
-        <option>Toes</option>
-    </optgroup>
-    <optgroup label="Torso">
-        <option>Chest</option>
-        <option>Stomach</option>
-        <option>Back (Upper)</option>
-        <option>Back (Lower)</option>
-        <option>Ribs</option>
-        <option>Side (Flank)</option>
-    </optgroup>
-    <optgroup label="Head & Neck">
-        <option>Neck (Front)</option>
-        <option>Neck (Back)</option>
-        <option>Head</option>
-        <option>Face</option>
-        <option>Ears</option>
-    </optgroup>
-    <optgroup label="Other">
-        <option>Hip</option>
-        <option>Buttocks</option>
-    </optgroup>
-</select>
+                            <option disabled selected value="">Select Body Part</option>
+                            <optgroup label="Arms">
+                                <option>Forearm</option>
+                                <option>Upper Arm</option>
+                                <option>Elbow</option>
+                                <option>Hand</option>
+                                <option>Fingers</option>
+                            </optgroup>
+                            <optgroup label="Legs">
+                                <option>Thigh</option>
+                                <option>Calf</option>
+                                <option>Knee</option>
+                                <option>Ankle</option>
+                                <option>Foot</option>
+                                <option>Toes</option>
+                            </optgroup>
+                            <optgroup label="Torso">
+                                <option>Chest</option>
+                                <option>Stomach</option>
+                                <option>Back (Upper)</option>
+                                <option>Back (Lower)</option>
+                                <option>Ribs</option>
+                                <option>Side (Flank)</option>
+                            </optgroup>
+                            <optgroup label="Head & Neck">
+                                <option>Neck (Front)</option>
+                                <option>Neck (Back)</option>
+                                <option>Head</option>
+                                <option>Face</option>
+                                <option>Ears</option>
+                            </optgroup>
+                            <optgroup label="Other">
+                                <option>Hip</option>
+                                <option>Buttocks</option>
+                            </optgroup>
+                        </select>
                     </div>
-                     <div class="form-card__group">
+                    <div class="form-card__group">
                         <label for="body-details">Additional details <span class="tooltip" title="e.g., inner side, near the elbow...">ⓘ</span></label>
                         <input id="body-details" type="text" placeholder="e.g., inner side, near the elbow..." class="form-card__input">
                     </div>
@@ -157,7 +178,7 @@
                         <input type="range" min="5" max="30" value="15" id="height-slider" class="slider">
                         <span><span id="height-value">15</span> cm</span>
                     </div>
-                    <button type="button" class="btn btn--subtle" type="button" id="add-space-btn"><span>+</span> Add space</button>
+                    <button type="button" class="btn btn--subtle" id="add-space-btn"><span>+</span> Add space</button>
                 </div>
                 <div class="info-box">
                     <i class="info-box__icon">i</i>
@@ -167,14 +188,14 @@
                 
                 <div class="form-card__actions">
                     <button type="button" class="btn btn--secondary" data-target="form-section">Back</button>
-                    <button type="button" class="btn btn--primary" data-target="tattoo-idea-section">Next</button>
+                    <button type="button" id="ready-btn" class="btn btn--primary" data-target="tattoo-idea-section">Next</button>
                 </div>
             </div>
         </section>
 
         <section id="tattoo-idea-section" class="step-section">
             <nav class="step-nav">
-                 <ul>
+                <ul>
                     <li class="completed">Tattoo Request</li>
                     <li class="completed">Body Selector</li>
                     <li class="active">Tattoo Idea</li>
@@ -278,6 +299,7 @@
             </div>
         </section>
 
-    </form> <script src="js/main.js" type="module"></script>
+    </form>
+    <script src="js/main.js" type="module"></script>
 </body>
 </html>
