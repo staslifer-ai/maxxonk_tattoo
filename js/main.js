@@ -2,153 +2,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-/**
- * Converts a data URL to a Blob object.
- * @param {string} dataURL - The data URL to convert.
- * @returns {Blob} The Blob object.
- */
-function dataURLtoBlob(dataURL) {
-    const [header, data] = dataURL.split(',');
-    const mime = header.match(/:(.*?);/)[1];
-    const binary = atob(data);
-    const array = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-        array[i] = binary.charCodeAt(i);
-    }
-    return new Blob([array], { type: mime });
-}
-
-/**
- * Captures screenshots of the 3D model, focusing on painted areas if available,
- * otherwise captures default views.
- * @param {THREE.PerspectiveCamera} camera - The camera used for rendering.
- * @param {OrbitControls} controls - The OrbitControls instance.
- * @param {THREE.WebGLRenderer} renderer - The WebGLRenderer instance.
- * @param {THREE.Scene} scene - The Three.js scene.
- * @param {THREE.Mesh | THREE.Object3D} mainPaintedMesh - The main mesh or object being painted.
- * @param {Set<number>} paintedVertices - A Set of vertex indices that have been painted.
- * @returns {Promise<string[]>} An array of data URLs for the captured screenshots.
- */
-async function captureModelScreenshots(camera, controls, renderer, scene, mainPaintedMesh, paintedVertices) {
-    const originalPos = camera.position.clone();
-    const originalTarget = controls.target.clone();
-    const originalZoom = camera.zoom;
-
-    // Fallback if no paint data or main model
-    if (!mainPaintedMesh || !mainPaintedMesh.isMesh || paintedVertices.size === 0) {
-        console.warn("No painted areas found or mainPaintedMesh is not a Mesh. Capturing default views.");
-        return await captureDefaultModelScreenshots(camera, controls, renderer, scene);
-    }
-
-    const posAttr = mainPaintedMesh.geometry.attributes.position;
-
-    const paintedWorldPositions = [];
-    const tempVertex = new THREE.Vector3();
-
-    // Convert painted vertices to world coordinates
-    for (const index of paintedVertices) {
-        tempVertex.fromBufferAttribute(posAttr, index);
-        tempVertex.applyMatrix4(mainPaintedMesh.matrixWorld);
-        paintedWorldPositions.push(tempVertex.clone());
-    }
-
-    if (paintedWorldPositions.length === 0) {
-        console.warn("No painted world positions found. Capturing default views.");
-        return await captureDefaultModelScreenshots(camera, controls, renderer, scene);
-    }
-
-    // 1. Calculate the Bounding Box for ALL painted areas
-    const bbox = new THREE.Box3().setFromPoints(paintedWorldPositions);
-    const center = new THREE.Vector3();
-    bbox.getCenter(center);
-    const size = new THREE.Vector3();
-    bbox.getSize(size);
-
-    // Calculate optimal camera distance to fit the entire painted bbox
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const fov = camera.fov * (Math.PI / 180);
-    let cameraDistance = maxDim / (2 * Math.tan(fov / 2));
-    cameraDistance *= 1.5; // Add some padding to ensure everything fits
-
-    const shots = [];
-
-    // Define capture directions relative to the center of the painted bbox
-    // These are general views around the model, ensuring all painted areas are covered.
-    const viewDirections = [
-        new THREE.Vector3(0, 0, 1),  // Front view
-        new THREE.Vector3(1, 0, 0),  // Right view
-        new THREE.Vector3(0, 0, -1), // Back view
-        new THREE.Vector3(-1, 0, 0), // Left view
-        new THREE.Vector3(0, 1, 0),  // Top view
-        // new THREE.Vector3(0, -1, 0)  // Bottom view (optional, typically not needed for body)
-    ];
-
-
-    for (const dir of viewDirections) {
-        // Calculate camera position relative to the center of the painted bbox
-        const cameraPos = center.clone().add(dir.normalize().multiplyScalar(cameraDistance));
-
-        camera.position.copy(cameraPos);
-        camera.lookAt(center); // Camera looks at the center of the painted area
-        controls.target.copy(center); // Update OrbitControls target
-        controls.update(); // Important to update controls after changing position and target
-
-        renderer.render(scene, camera);
-        await new Promise(r => setTimeout(r, 100)); // Small delay for rendering to complete
-        shots.push(renderer.domElement.toDataURL('image/png'));
-    }
-
-    // Restore camera and controls to original position
-    camera.position.copy(originalPos);
-    controls.target.copy(originalTarget);
-    camera.zoom = originalZoom;
-    camera.updateProjectionMatrix(); // Update projection matrix after changing zoom
-    controls.update();
-
-    return shots;
-}
-
-/**
- * Captures screenshots from default fixed angles. Used as a fallback.
- * @param {THREE.PerspectiveCamera} camera - The camera used for rendering.
- * @param {OrbitControls} controls - The OrbitControls instance.
- * @param {THREE.WebGLRenderer} renderer - The WebGLRenderer instance.
- * @param {THREE.Scene} scene - The Three.js scene.
- * @returns {Promise<string[]>} An array of data URLs for the captured screenshots.
- */
-async function captureDefaultModelScreenshots(camera, controls, renderer, scene) {
-    const originalPos = camera.position.clone();
-    const originalTarget = controls.target.clone();
-    const radius = originalPos.distanceTo(originalTarget);
-    const y = originalPos.y; // Keep current Y level for default shots
-    const positions = [
-        [0, y, radius],     // Front
-        [radius, y, 0],     // Right
-        [0, y, -radius],    // Back
-        [-radius, y, 0]     // Left
-    ];
-
-    const shots = [];
-    for (const pos of positions) {
-        camera.position.set(pos[0], pos[1], pos[2]);
-        camera.lookAt(originalTarget);
-        controls.update();
-        renderer.render(scene, camera);
-        await new Promise(r => setTimeout(r, 100)); // Small delay
-        shots.push(renderer.domElement.toDataURL('image/png'));
-    }
-
-    camera.position.copy(originalPos);
-    controls.target.copy(originalTarget);
-    controls.update();
-    return shots;
-}
-
 // --- Application State & Data ---
 const appData = {
     contact: {},
     bodySpaces: [],
-    tattooIdea: { description: '', references: [], screenshots3D: [] },
+    tattooIdea: { description: '', references: [], screenshot3D: null },
     appointmentDate: ''
 };
 
@@ -173,6 +31,16 @@ const DOMElements = {
     dropArea: document.getElementById('file-drop-area'),
     previewContainer: document.getElementById('image-preview-container'),
     calendarGrid: document.querySelector('#schedule-section .calendar__grid'),
+
+    // 3D UI Elements
+    maleBtn: document.getElementById('male-btn'),
+    femaleBtn: document.getElementById('female-btn'),
+    modeToggle: document.getElementById('mode-toggle'),
+    drawingTools: document.querySelector('.drawing-tools'),
+    brushSizeBtn: document.getElementById('brush-size-btn'),
+    brushSlider: document.getElementById('brush-slider'),
+    undoBtn: document.getElementById('undo-btn'),
+    readyBtn: document.getElementById('ready-btn'),
 };
 
 // --- Main Initializer ---
@@ -196,6 +64,7 @@ function showScreen(targetId) {
 
 function setupNavigation() {
     DOMElements.navButtons.forEach(button => {
+        if (button.id === 'ready-btn') return;
         button.addEventListener('click', () => {
             const targetId = button.dataset.target;
             showScreen(targetId);
@@ -207,13 +76,11 @@ function setupNavigation() {
 function setupFormSubmission() {
     DOMElements.tattooForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-
         const submitButton = document.getElementById('to-completed-btn');
         submitButton.disabled = true;
         submitButton.textContent = 'Отправка...';
 
         const formData = new FormData(DOMElements.tattooForm);
-
         const selectedDateEl = DOMElements.calendarGrid.querySelector('.is-selected');
         const monthYear = document.querySelector('#schedule-section .calendar__header h3').textContent;
         const appointmentDate = selectedDateEl ? `${selectedDateEl.textContent} ${monthYear}` : 'Не выбрана';
@@ -224,30 +91,26 @@ function setupFormSubmission() {
         ).join('; \n');
         formData.append('bodySpaces', bodySpacesText || 'Не указано');
 
-        if (appData.tattooIdea.screenshots3D.length) {
-            appData.tattooIdea.screenshots3D.forEach((dataUrl, idx) => {
-                const blob = dataURLtoBlob(dataUrl);
-                formData.append('screenshots', blob, `screenshot_${idx + 1}.png`);
-            });
-        }
-
         appData.tattooIdea.references.forEach((ref, index) => {
             formData.append('references', ref.file, `reference_${index + 1}.jpg`);
         });
+
+        if (appData.tattooIdea.screenshot3D) {
+            const response = await fetch(appData.tattooIdea.screenshot3D);
+            const blob = await response.blob();
+            formData.append('screenshot3D', blob, 'tattoo_design.png');
+        }
 
         try {
             const response = await fetch('/.netlify/functions/sendForm', {
                 method: 'POST',
                 body: formData,
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Не удалось отправить форму.');
             }
-
             showScreen('completed-section');
-
         } catch (error) {
             console.error('Ошибка при отправке:', error);
             alert(`Произошла ошибка: ${error.message}`);
@@ -263,9 +126,7 @@ function setupBodySelector() {
     [DOMElements.widthSlider, DOMElements.heightSlider].forEach(slider => {
         if (slider) {
             const output = slider.id === 'width-slider' ? DOMElements.widthValue : DOMElements.heightValue;
-            slider.addEventListener('input', e => {
-                output.textContent = e.target.value;
-            });
+            slider.addEventListener('input', e => { output.textContent = e.target.value; });
         }
     });
 
@@ -290,14 +151,25 @@ function setupBodySelector() {
     });
 
     let modelInitialized = false;
+    let threeSceneInstance = null;
+
     DOMElements.tab3d.addEventListener('click', () => {
         toggleTabs(true);
         if (!modelInitialized) {
-            init3DScene();
+            threeSceneInstance = init3DScene();
             modelInitialized = true;
         }
     });
     DOMElements.tabManual.addEventListener('click', () => toggleTabs(false));
+
+    DOMElements.readyBtn.addEventListener('click', () => {
+        if (DOMElements.tab3d.classList.contains('is-active') && threeSceneInstance) {
+            const screenshotDataUrl = threeSceneInstance.takeScreenshot();
+            appData.tattooIdea.screenshot3D = screenshotDataUrl;
+            console.log("3D Screenshot captured and saved to appData.");
+        }
+        showScreen(DOMElements.readyBtn.dataset.target);
+    });
 }
 
 function renderBodySpaceCards() {
@@ -322,24 +194,17 @@ function toggleTabs(show3d) {
 function setupFileUpload() {
     const { dropArea, fileInput, previewContainer } = DOMElements;
     if (!dropArea) return;
-
     dropArea.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', e => handleFiles(e.target.files));
-
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        dropArea.addEventListener(eventName, e => {
-            e.preventDefault();
-            e.stopPropagation();
-        }, false);
+        dropArea.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
     });
-
     dropArea.addEventListener('dragenter', () => dropArea.classList.add('is-dragover'));
     dropArea.addEventListener('dragleave', () => dropArea.classList.remove('is-dragover'));
     dropArea.addEventListener('drop', e => {
         dropArea.classList.remove('is-dragover');
         handleFiles(e.dataTransfer.files);
     });
-
     previewContainer.addEventListener('click', e => {
         if (e.target.classList.contains('preview-item__remove-btn')) {
             const fileId = e.target.parentElement.dataset.id;
@@ -350,16 +215,11 @@ function setupFileUpload() {
 }
 
 function handleFiles(files) {
-    ([...files]).forEach(file => {
+    [...files].forEach(file => {
         if (!file.type.startsWith('image/') || DOMElements.previewContainer.children.length >= 5) return;
-
-        const fileData = {
-            id: Date.now() + Math.random(),
-            file: file
-        };
+        const fileData = { id: Date.now() + Math.random(), file: file };
         appData.tattooIdea.references.push(fileData);
         DOMElements.fileInput.value = '';
-
         const reader = new FileReader();
         reader.onload = () => {
             DOMElements.previewContainer.innerHTML += `
@@ -384,238 +244,289 @@ function setupCalendar() {
     });
 }
 
-// --- 3D Scene Logic ---
+// --- 3D Scene Logic (Refactored) ---
 function init3DScene() {
-    let renderer, scene, camera, controls, brushRadius;
-    let paintMode = false;
-    let isPainting = false;
-    let paintedVertices = new Set(); // Stores indices of painted vertices for the main mesh
-    let mainPaintedMesh = null; // Reference to the actual mesh being painted
-
-    const mapRadius = v => THREE.MathUtils.mapLinear(+v, 5, 40, 0.03, 0.12);
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-    const brushColor = new THREE.Color(0x7B2BFF);
-    const tempVec = new THREE.Vector3();
-    const prevColor = new THREE.Color();
-
-    const { clientWidth: W, clientHeight: H } = DOMElements.modelWrapper;
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf0f0f0);
-    camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 1000);
-    camera.position.set(0, 1.5, 8);
-    renderer = new THREE.WebGLRenderer({
-        antialias: true,
-        preserveDrawingBuffer: true // Crucial for toDataURL
-    });
-    renderer.setSize(W, H);
-    DOMElements.modelWrapper.appendChild(renderer.domElement);
-
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.target.set(0, 1.5, 0);
-    controls.update();
-
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const dl = new THREE.DirectionalLight(0xffffff, 0.8);
-    dl.position.set(5, 5, 5);
-    scene.add(dl);
-
-    const uiElements = create3DUI();
-    DOMElements.modelWrapper.append(
-        uiElements.paintBtn,
-        uiElements.readyBtn,
-        uiElements.slider,
-        uiElements.sliderLabel,
-        uiElements.zoomControls,
-        uiElements.hintIcons,
-        uiElements.genderBtn
-    );
-
-    uiElements.paintBtn.onclick = () => {
-        paintMode = !paintMode;
-        controls.enabled = !paintMode; // Disable orbit controls when in paint mode
-        uiElements.paintBtn.classList.toggle('active', paintMode);
+    // --- State Management ---
+    // Группируем все переменные 3D-сцены в один объект для порядка
+    const state = {
+        renderer: null,
+        scene: null,
+        camera: null,
+        controls: null,
+        currentModel: null,
+        brushRadius: 0.05,
+        currentMode: 'navigate', // 'navigate' or 'draw'
+        isPainting: false,
+        historyStack: [],
+        raycaster: new THREE.Raycaster(),
+        mouse: new THREE.Vector2(),
+        brushColor: new THREE.Color(0x7B2BFF),
     };
 
-    // Capture screenshots from several angles when the user is ready
-    uiElements.readyBtn.addEventListener('click', async () => {
-        try {
-            uiElements.readyBtn.disabled = true;
-            // Pass the mainPaintedMesh and the Set of painted vertices
-            const shots = await captureModelScreenshots(camera, controls, renderer, scene, mainPaintedMesh, paintedVertices);
-            appData.tattooIdea.screenshots3D = shots;
-            uiElements.readyBtn.classList.add('captured');
-        } catch (err) {
-            console.error('Screenshot error:', err);
-        } finally {
-            uiElements.readyBtn.disabled = false;
+    // --- Core Setup Functions ---
+    /**
+     * Инициализирует сцену, камеру, свет и рендерер
+     */
+    function setupScene() {
+        const { clientWidth: w, clientHeight: h } = DOMElements.modelWrapper;
+
+        state.scene = new THREE.Scene();
+        state.scene.background = new THREE.Color(0xf0f0f0);
+
+        state.camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+        state.camera.position.set(0, 1.6, 5); // Позиция камеры немного изменена для лучшего вида
+
+        state.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+        state.renderer.setSize(w, h);
+        DOMElements.modelWrapper.appendChild(state.renderer.domElement);
+
+        // Освещение
+        state.scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        directionalLight.position.set(5, 10, 7.5);
+        state.scene.add(directionalLight);
+    }
+
+    /**
+     * Настраивает OrbitControls для управления камерой
+     */
+    function setupControls() {
+        state.controls = new OrbitControls(state.camera, state.renderer.domElement);
+        state.controls.enableDamping = true;
+        state.controls.target.set(0, 1, 0); // Цель камеры в центре модели
+        state.controls.update();
+    }
+
+    /**
+     * Создает загрузчик моделей с функцией нормализации
+     */
+    function createModelLoader() {
+        const loader = new GLTFLoader();
+        // Создаем ЕДИНЫЙ материал для всех моделей, чтобы они выглядели одинаково
+        const sharedBodyMaterial = new THREE.MeshStandardMaterial({
+            color: 0xffffff,       // Белый цвет по умолчанию
+            metalness: 0.1,
+            roughness: 0.8,
+            vertexColors: true,    // Обязательно для рисования!
+        });
+
+        /**
+         * Загружает, нормализует и добавляет модель на сцену
+         * @param {string} url - Путь к файлу модели .glb
+         */
+        function loadAndNormalizeModel(url) {
+            if (state.currentModel) {
+                state.scene.remove(state.currentModel);
+            }
+            state.historyStack.length = 0; // Очищаем историю отмен
+
+            loader.load(url, (gltf) => {
+                state.currentModel = gltf.scene;
+
+                // --- КЛЮЧЕВАЯ ЛОГИКА НОРМАЛИЗАЦИИ ---
+                // 1. Вычисляем "габаритный контейнер" (Bounding Box) модели
+                const box = new THREE.Box3().setFromObject(state.currentModel);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+
+                // 2. Находим самый большой размер (ширина, высота или глубина)
+                const maxDim = Math.max(size.x, size.y, size.z);
+                
+                // 3. Вычисляем масштаб, чтобы модель вписалась в нужный нам размер (например, 3 юнита в высоту)
+                const desiredHeight = 3.0;
+                const scale = desiredHeight / maxDim;
+                state.currentModel.scale.setScalar(scale);
+
+                // 4. Пересчитываем центр ПОСЛЕ масштабирования
+                const newBox = new THREE.Box3().setFromObject(state.currentModel);
+                const newCenter = newBox.getCenter(new THREE.Vector3());
+
+                // 5. Смещаем модель так, чтобы ее новый центр был в точке (0, 1.5, 0)
+                // (немного поднимаем, чтобы "ноги" были на уровне 0)
+                state.currentModel.position.sub(newCenter).add(new THREE.Vector3(0, 1.5, 0));
+                // --- КОНЕЦ ЛОГИКИ НОРМАЛИЗАЦИИ ---
+
+                // Применяем общий материал и подготавливаем для рисования
+                state.currentModel.traverse(obj => {
+                    if (obj.isMesh) {
+                        // Применяем наш единый материал
+                        obj.material = sharedBodyMaterial;
+
+                        // Убеждаемся, что у геометрии есть атрибут цвета для вершин
+                        if (!obj.geometry.hasAttribute('color')) {
+                            const colors = new Float32Array(obj.geometry.attributes.position.count * 3);
+                            colors.fill(1); // Заполняем белым цветом (r=1, g=1, b=1)
+                            obj.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                        }
+                    }
+                });
+                
+                state.scene.add(state.currentModel);
+                console.log(`Loaded and normalized: ${url}`, state.currentModel);
+
+            }, undefined, (err) => console.error(`GLB loading error for ${url}:`, err));
         }
-    });
+        
+        return { load: loadAndNormalizeModel };
+    }
 
-    uiElements.slider.oninput = () => { brushRadius = mapRadius(uiElements.slider.value); };
-    brushRadius = mapRadius(uiElements.slider.value);
+    // --- Event Listeners and UI ---
+    /**
+     * Настраивает все обработчики событий для 3D интерфейса
+     */
+    function setupUIEventListeners(modelLoader) {
+        // --- Выбор модели ---
+        DOMElements.maleBtn.addEventListener('click', () => {
+            DOMElements.maleBtn.classList.add('active');
+            DOMElements.femaleBtn.classList.remove('active');
+            modelLoader.load('man.glb');
+        });
+        DOMElements.femaleBtn.addEventListener('click', () => {
+            DOMElements.femaleBtn.classList.add('active');
+            DOMElements.maleBtn.classList.remove('active');
+            modelLoader.load('woman.glb');
+        });
 
-    const zoomFactor = 1.2;
-    uiElements.zoomInBtn.addEventListener('click', () => {
-        camera.zoom *= zoomFactor;
-        camera.updateProjectionMatrix();
-    });
-    uiElements.zoomOutBtn.addEventListener('click', () => {
-        camera.zoom /= zoomFactor;
-        camera.updateProjectionMatrix();
-    });
+        // --- Переключение режимов (Навигация/Рисование) ---
+        DOMElements.modeToggle.addEventListener('click', () => {
+            state.currentMode = (state.currentMode === 'navigate') ? 'draw' : 'navigate';
+            const isNavigateMode = state.currentMode === 'navigate';
+            state.controls.enabled = isNavigateMode;
+            DOMElements.modeToggle.innerHTML = isNavigateMode ? '🖐️' : '🖌️';
+            DOMElements.drawingTools.classList.toggle('hidden', isNavigateMode);
+        });
 
-    new GLTFLoader().load('man.glb', gltf => {
-        const model = gltf.scene;
-        model.traverse(obj => {
-            if (obj.isMesh) {
-                // Assign the first found mesh as the main one for painting.
-                // If your GLB has multiple meshes and you only want to paint specific ones,
-                // you might need a more robust way to identify your main mesh (e.g., by name).
-                if (!mainPaintedMesh) {
-                    mainPaintedMesh = obj;
-                }
-
-                const g = obj.geometry;
-                if (!g.hasAttribute('color')) {
-                    const colors = new Float32Array(g.attributes.position.count * 3);
-                    colors.fill(1); // Default to white
-                    g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-                }
-                obj.material = obj.material.clone();
-                obj.material.vertexColors = true;
+        // --- Инструменты рисования ---
+        const mapRadius = v => THREE.MathUtils.mapLinear(+v, 1, 100, 0.01, 0.15);
+        
+        DOMElements.brushSizeBtn.addEventListener('click', () => DOMElements.brushSlider.classList.toggle('hidden'));
+        DOMElements.brushSlider.addEventListener('input', () => {
+            state.brushRadius = mapRadius(DOMElements.brushSlider.value);
+        });
+        state.brushRadius = mapRadius(DOMElements.brushSlider.value); // Инициализация
+        
+        // --- Отмена действия ---
+        DOMElements.undoBtn.addEventListener('click', () => {
+            if (state.historyStack.length > 0 && state.currentModel) {
+                const lastState = state.historyStack.pop();
+                state.currentModel.traverse(obj => {
+                    if(obj.isMesh) {
+                        const colorAttr = obj.geometry.attributes.color;
+                        colorAttr.array.set(lastState);
+                        colorAttr.needsUpdate = true;
+                    }
+                });
             }
         });
-        model.position.y = -16; // Adjust model position if needed
-        scene.add(model);
-    }, undefined, err => console.error('GLB loading error:', err));
+        
+        // --- События мыши для рисования ---
+        const setMouse = (e) => {
+            const rect = state.renderer.domElement.getBoundingClientRect();
+            state.mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            state.mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        };
 
+        state.renderer.domElement.addEventListener('pointerdown', (e) => {
+            if (state.currentMode === 'draw' && e.button === 0 && state.currentModel) {
+                state.isPainting = true;
+                // Сохраняем текущее состояние цвета для возможности отмены
+                state.currentModel.traverse(obj => {
+                    if(obj.isMesh) {
+                        const colorAttr = obj.geometry.attributes.color;
+                        state.historyStack.push(new Float32Array(colorAttr.array));
+                    }
+                });
+                paint(e);
+            }
+        });
+        state.renderer.domElement.addEventListener('pointermove', (e) => {
+            if (state.isPainting && state.currentMode === 'draw') paint(e);
+        });
+        window.addEventListener('pointerup', () => { state.isPainting = false; });
+        
+        // --- Изменение размера окна ---
+        window.addEventListener('resize', () => {
+            const { clientWidth, clientHeight } = DOMElements.modelWrapper;
+            state.renderer.setSize(clientWidth, clientHeight);
+            state.camera.aspect = clientWidth / clientHeight;
+            state.camera.updateProjectionMatrix();
+        });
+    }
 
+    // --- Core Logic ---
+    /**
+     * Функция рисования на модели
+     */
     function paint(e) {
+        const { raycaster, mouse, camera, scene, brushRadius, brushColor } = state;
+        const setMouse = (ev) => {
+            const rect = state.renderer.domElement.getBoundingClientRect();
+            mouse.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
+        };
+
         setMouse(e);
         raycaster.setFromCamera(mouse, camera);
-        const hit = raycaster.intersectObjects(scene.children, true)[0];
 
-        // Ensure we hit a mesh, and specifically our main painted mesh
-        if (!hit || !hit.object.isMesh || hit.object !== mainPaintedMesh) return;
+        const intersects = raycaster.intersectObjects(scene.children, true);
+        if (!intersects.length) return;
 
-        const g = hit.object.geometry;
-        const posAttr = g.attributes.position;
-        const colorAttr = g.attributes.color;
+        const hit = intersects[0];
+        const { object, point } = hit;
+        if (!object.isMesh) return;
+
+        const geometry = object.geometry;
+        const posAttr = geometry.attributes.position;
+        const colorAttr = geometry.attributes.color;
+
+        const tempVec = new THREE.Vector3();
+        const prevColor = new THREE.Color();
 
         for (let i = 0; i < posAttr.count; i++) {
-            // Transform vertex position to world coordinates for distance calculation
-            tempVec.fromBufferAttribute(posAttr, i).applyMatrix4(hit.object.matrixWorld);
-            const dist = tempVec.distanceTo(hit.point);
-            if (dist > brushRadius) continue;
+            tempVec.fromBufferAttribute(posAttr, i).applyMatrix4(object.matrixWorld);
+            const dist = tempVec.distanceTo(point);
 
-            const weight = 1 - (dist / brushRadius) ** 2; // Stronger in center, fades out
-            prevColor.fromBufferAttribute(colorAttr, i);
-            prevColor.lerp(brushColor, weight); // Blend colors
-            colorAttr.setXYZ(i, prevColor.r, prevColor.g, prevColor.b);
-
-            // Add the vertex index to the set of painted vertices
-            paintedVertices.add(i);
+            if (dist < brushRadius) {
+                const weight = 1 - (dist / brushRadius); // Плавный переход
+                prevColor.fromBufferAttribute(colorAttr, i);
+                prevColor.lerp(brushColor, weight);
+                colorAttr.setXYZ(i, prevColor.r, prevColor.g, prevColor.b);
+            }
         }
-        colorAttr.needsUpdate = true; // Tell Three.js to re-upload color data to GPU
+        colorAttr.needsUpdate = true;
     }
-
-    function setMouse(e) {
-        const rect = renderer.domElement.getBoundingClientRect();
-        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    }
-
-    renderer.domElement.addEventListener('pointerdown', e => {
-        if (paintMode && e.button === 0) { // Left click
-            isPainting = true;
-            paint(e);
-        }
-    });
-    renderer.domElement.addEventListener('pointermove', e => {
-        if (isPainting && paintMode) paint(e);
-    });
-    window.addEventListener('pointerup', () => { isPainting = false; });
-
+    
+    /**
+     * Главный цикл анимации
+     */
     function animate() {
         requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
+        state.controls.update();
+        state.renderer.render(state.scene, state.camera);
+    }
+    
+    // --- Initialization ---
+    function initialize() {
+        setupScene();
+        setupControls();
+        const modelLoader = createModelLoader();
+        setupUIEventListeners(modelLoader);
+
+        // Загрузка модели по умолчанию
+        DOMElements.maleBtn.classList.add('active');
+        modelLoader.load('man.glb'); 
+        
+        animate();
     }
 
-    function onResize() {
-        const { clientWidth, clientHeight } = DOMElements.modelWrapper;
-        if (clientWidth === 0 || clientHeight === 0) return; // Prevent division by zero
-        renderer.setSize(clientWidth, clientHeight);
-        camera.aspect = clientWidth / clientHeight;
-        camera.updateProjectionMatrix();
-    }
+    initialize();
 
-    window.addEventListener('resize', onResize);
-    animate(); // Start the animation loop
-}
-
-/**
- * Creates and returns the UI elements for the 3D viewer.
- * @returns {Object} An object containing references to the created UI elements.
- */
-function create3DUI() {
-    // Paint Button
-    const paintBtn = document.createElement('button');
-    paintBtn.type = 'button';
-    paintBtn.id = 'paint-btn';
-    paintBtn.className = 'model-ui-btn';
-    paintBtn.innerHTML = `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(4 4) scale(1.5)"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></g></svg><span>Paint</span>`;
-
-    // Ready Button
-    const readyBtn = document.createElement('button');
-    readyBtn.type = 'button';
-    readyBtn.id = 'ready-btn';
-    readyBtn.className = 'model-ui-btn';
-    readyBtn.innerHTML = `<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(4 4) scale(1.5)"><polyline points="20 6 9 17 4 12"/></g></svg><span>Ready</span>`;
-
-    // Brush Slider
-    const slider = document.createElement('input');
-    slider.type = 'range';
-    slider.className = 'brush-slider';
-    slider.min = 5; slider.max = 40; slider.value = 20;
-    const sliderLabel = document.createElement('div');
-    sliderLabel.className = 'brush-label';
-    sliderLabel.innerHTML = 'Size<br>Brush';
-
-    // Zoom Controls
-    const zoomControls = document.createElement('div');
-    zoomControls.className = 'zoom-controls';
-    const zoomInBtn = document.createElement('button');
-    zoomInBtn.type = 'button';
-    zoomInBtn.id = 'zoom-in-btn';
-    zoomInBtn.className = 'zoom-btn';
-    zoomInBtn.textContent = '+';
-    const zoomOutBtn = document.createElement('button');
-    zoomOutBtn.type = 'button';
-    zoomOutBtn.id = 'zoom-out-btn';
-    zoomOutBtn.className = 'zoom-btn';
-    zoomOutBtn.textContent = '−';
-    zoomControls.append(zoomOutBtn, zoomInBtn);
-
-    // Hint Icons
-    const hintIcons = document.createElement('div');
-    hintIcons.className = 'hint-icons';
-    const rotateIcon = document.createElement('div');
-    rotateIcon.className = 'hint-icon';
-    rotateIcon.innerHTML = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 4C11.5817 4 8 7.58172 8 12V20C8 24.4183 11.5817 28 16 28C20.4183 28 24 24.4183 24 20V12C24 7.58172 20.4183 4 16 4Z" stroke="#333" stroke-width="1.5" fill="none"/><path d="M16 4V12" stroke="#333" stroke-width="1.5"/><path d="M16 4C20.4183 4 24 7.58172 24 12H16V4Z" fill="#90EE90"/><rect x="15" y="7" width="2" height="4" rx="1" stroke="#333" stroke-width="1.5" fill="white"/><path d="M10 36H22" stroke="#333" stroke-width="1.5" stroke-linecap="round"/><path d="M12 34L10 36L12 38" stroke="#333" stroke-width="1.5" stroke-linecap="round"/><path d="M20 34L22 36L20 38" stroke="#333" stroke-width="1.5" stroke-linecap="round"/></svg><span>Rotate</span>`;
-    const zoomIcon = document.createElement('div');
-    zoomIcon.className = 'hint-icon';
-    zoomIcon.innerHTML = `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 4C11.5817 4 8 7.58172 8 12V20C8 24.4183 11.5817 28 16 28C20.4183 28 24 24.4183 24 20V12C24 7.58172 20.4183 4 16 4Z" stroke="#333" stroke-width="1.5" fill="none"/><path d="M16 4V12" stroke="#333" stroke-width="1.5"/><path d="M16 4C11.5817 4 8 7.58172 8 12H16V4Z" fill="#90EE90"/><rect x="15" y="7" width="2" height="4" rx="1" stroke="#333" stroke-width="1.5" fill="white"/><path d="M32 12L32 20" stroke="#333" stroke-width="1.5" stroke-linecap="round"/><path d="M30 14L32 12L34 14" stroke="#333" stroke-width="1.5" stroke-linecap="round"/><path d="M30 18L32 20L34 18" stroke="#333" stroke-width="1.5" stroke-linecap="round"/></svg><span>Zoom</span>`;
-    hintIcons.append(rotateIcon, zoomIcon);
-
-    // Gender Button
-    const genderBtn = document.createElement('button');
-    genderBtn.type = 'button';
-    genderBtn.id = 'gender-btn';
-    genderBtn.className = 'gender-selector-btn';
-    genderBtn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15.5 8.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z" stroke="#333" stroke-width="1.5"/><path d="M12 12v9m-2-2h4M17.5 4.5l-3-3m0 3l3-3" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Gender</span>`;
-
-    return { paintBtn, readyBtn, slider, sliderLabel, zoomControls, zoomInBtn, zoomOutBtn, hintIcons, genderBtn };
+    // --- Public API ---
+    // Возвращаем методы, которые могут быть вызваны извне
+    return {
+        takeScreenshot: () => {
+            state.renderer.render(state.scene, state.camera);
+            return state.renderer.domElement.toDataURL('image/png');
+        }
+    };
 }
